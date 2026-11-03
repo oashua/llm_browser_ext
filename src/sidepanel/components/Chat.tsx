@@ -1,0 +1,106 @@
+import { useEffect, useRef } from 'preact/hooks'
+import type { ToolOutput, ToolResultBlock, WireMessage } from '../../shared/types'
+import { renderMarkdown } from './Markdown'
+import { ToolTrace, type TraceEntry } from './ToolTrace'
+
+export interface ChatProps {
+  messages: WireMessage[]
+  streamingText: string
+  running: boolean
+  error: string
+  onSend: (text: string) => void
+  onStop: () => void
+  onRetry: () => void
+  onClear: () => void
+}
+
+export function Chat(props: ChatProps) {
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
+  }, [props.messages.length, props.streamingText])
+
+  // 从消息序列构造视图项：文本气泡 + 工具轨迹
+  const toolResults = new Map<string, ToolResultBlock>()
+  for (const m of props.messages)
+    for (const b of m.content)
+      if (b.type === 'tool_result') toolResults.set(b.tool_use_id, b)
+
+  const items: Array<{ kind: 'user' | 'assistant' | 'trace'; text?: string; entry?: TraceEntry }> = []
+  for (const m of props.messages) {
+    for (const b of m.content) {
+      if (b.type === 'text' && b.text.trim())
+        items.push({ kind: m.role === 'user' ? 'user' : 'assistant', text: b.text })
+      else if (b.type === 'tool_use') {
+        const result = toolResults.get(b.id)
+        const entry: TraceEntry = {
+          id: b.id,
+          name: b.name,
+          input: b.input,
+          output: result
+            ? ({
+                text: typeof result.content === 'string' ? result.content : '[含图片的结果]',
+                isError: result.is_error,
+              } as ToolOutput)
+            : undefined,
+        }
+        items.push({ kind: 'trace', entry })
+      }
+    }
+  }
+
+  function send(): void {
+    const text = inputRef.current?.value.trim()
+    if (!text || props.running) return
+    if (inputRef.current) inputRef.current.value = ''
+    props.onSend(text)
+  }
+
+  return (
+    <div class="chat">
+      <div class="msg-list" ref={listRef}>
+        {items.length === 0 && !props.streamingText && <div class="empty">向 AI 提问当前网页内容…</div>}
+        {items.map((it, i) =>
+          it.kind === 'trace' ? (
+            <ToolTrace key={`t${i}`} entry={it.entry!} />
+          ) : (
+            <div key={i} class={`bubble ${it.kind}`} dangerouslySetInnerHTML={{ __html: renderMarkdown(it.text!) }} />
+          ),
+        )}
+        {props.streamingText && (
+          <div class="bubble assistant" dangerouslySetInnerHTML={{ __html: renderMarkdown(props.streamingText) }} />
+        )}
+        {props.error && (
+          <div class="error-card">
+            <div>{props.error}</div>
+            <button onClick={() => props.onRetry()}>重试</button>
+          </div>
+        )}
+      </div>
+      <div class="input-row">
+        <textarea
+          ref={inputRef}
+          placeholder="询问当前网页…（Enter 发送，Shift+Enter 换行）"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              send()
+            }
+          }}
+        />
+        {props.running ? (
+          <button class="stop" onClick={() => props.onStop()}>
+            停止
+          </button>
+        ) : (
+          <button onClick={() => send()}>发送</button>
+        )}
+        <button class="ghost" title="清空会话" onClick={() => props.onClear()}>
+          🗑
+        </button>
+      </div>
+    </div>
+  )
+}
