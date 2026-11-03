@@ -1,0 +1,10 @@
+:root {
+  color-scheme: light dark;
+  font-size: 14px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+#app { display: flex; flex-direction: column; height: 100vh; }
