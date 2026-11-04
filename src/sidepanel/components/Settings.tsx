@@ -56,8 +56,9 @@ export function SettingsView(props: SettingsProps) {
         <input
           value={form.baseUrl}
           onInput={(e) => set('baseUrl', (e.target as HTMLInputElement).value)}
-          placeholder="https://api.anthropic.com"
+          placeholder="https://open.bigmodel.cn/api/anthropic"
         />
+        <span class="hint">Anthropic 兼容端点的协议根，不要带 /v1。GLM 填 https://open.bigmodel.cn/api/anthropic</span>
       </label>
       <label>
         API Key

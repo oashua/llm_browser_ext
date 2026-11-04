@@ -1,13 +1,32 @@
 import type { ContentBlock, Settings, ToolParam, WireMessage } from '../../shared/types'
 import { createSseParser } from '../../shared/sse'
 
+// 规范化 Anthropic 兼容端点：剥首尾空白、尾部斜杠与误加的 /v1、/v1/messages
+// （Anthropic 协议约定 baseUrl 为协议根，如 https://open.bigmodel.cn/api/anthropic）
+export function normalizeBaseUrl(url: string): string {
+  let u = url.trim().replace(/\/+$/, '')
+  if (u.endsWith('/v1/messages')) u = u.slice(0, -'/v1/messages'.length)
+  else if (u.endsWith('/v1')) u = u.slice(0, -'/v1'.length)
+  return u.replace(/\/+$/, '')
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
     body: string,
+    public url?: string,
   ) {
-    super(`Anthropic API ${status}: ${body.slice(0, 300)}`)
+    super(formatApiError(status, body, url))
   }
+}
+
+function formatApiError(status: number, body: string, url?: string): string {
+  const where = url ? `（请求地址 ${url}）` : ''
+  // 网关返回 HTML 错误页（如 nginx 405）说明路径不对，原文没有诊断价值
+  if (/<html/i.test(body)) {
+    return `API ${status}${where}：端点返回了网页而非 API 响应，baseUrl 大概率填错。请填 Anthropic 兼容端点的协议根（不带 /v1；GLM 示例：https://open.bigmodel.cn/api/anthropic）`
+  }
+  return `Anthropic API ${status}${where}: ${body.slice(0, 300)}`
 }
 
 // 把 SSE 事件流组装为完整的 assistant 消息；onTextDelta 用于 UI 流式渲染
@@ -74,8 +93,9 @@ export interface StreamOptions {
 }
 
 export async function streamMessage(opts: StreamOptions): Promise<{ message: WireMessage; stopReason: string }> {
-  const base = opts.settings.baseUrl.replace(/\/+$/, '')
-  const res = await fetch(`${base}/v1/messages`, {
+  const base = normalizeBaseUrl(opts.settings.baseUrl)
+  const url = `${base}/v1/messages`
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -92,7 +112,7 @@ export async function streamMessage(opts: StreamOptions): Promise<{ message: Wir
     }),
     signal: opts.signal,
   })
-  if (!res.ok) throw new ApiError(res.status, await res.text().catch(() => ''))
+  if (!res.ok) throw new ApiError(res.status, await res.text().catch(() => ''), url)
   if (!res.body) throw new Error('Anthropic 响应无 body')
 
   const assembler = createMessageAssembler(opts.onTextDelta)

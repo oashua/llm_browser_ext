@@ -1,5 +1,39 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, createMessageAssembler, streamMessage } from '../src/sidepanel/agent/anthropic'
+import { ApiError, createMessageAssembler, normalizeBaseUrl, streamMessage } from '../src/sidepanel/agent/anthropic'
+
+describe('normalizeBaseUrl', () => {
+  it('规范的协议根地址保持不变', () => {
+    expect(normalizeBaseUrl('https://api.anthropic.com')).toBe('https://api.anthropic.com')
+    expect(normalizeBaseUrl('https://open.bigmodel.cn/api/anthropic')).toBe('https://open.bigmodel.cn/api/anthropic')
+  })
+  it('剥掉尾部斜杠', () => {
+    expect(normalizeBaseUrl('https://open.bigmodel.cn/api/anthropic/')).toBe('https://open.bigmodel.cn/api/anthropic')
+  })
+  it('剥掉误加的尾部 /v1', () => {
+    expect(normalizeBaseUrl('https://open.bigmodel.cn/api/anthropic/v1')).toBe('https://open.bigmodel.cn/api/anthropic')
+  })
+  it('剥掉误加的尾部 /v1/messages', () => {
+    expect(normalizeBaseUrl('https://api.anthropic.com/v1/messages')).toBe('https://api.anthropic.com')
+  })
+  it('首尾空白被裁剪', () => {
+    expect(normalizeBaseUrl('  https://x.com  ')).toBe('https://x.com')
+  })
+})
+
+describe('ApiError HTML 错误页提示', () => {
+  it('HTML 响应给出 baseUrl 定向提示并显示请求地址', () => {
+    const e = new ApiError(405, '<html><head><title>405 Not Allowed</title></head></html>', 'https://x.com/v1/messages')
+    expect(e.message).toContain('baseUrl')
+    expect(e.message).toContain('https://x.com/v1/messages')
+    expect(e.message).not.toContain('<html')
+    expect(e.status).toBe(405)
+  })
+  it('JSON 错误体保持原始格式', () => {
+    const e = new ApiError(401, '{"error":"bad key"}')
+    expect(e.message).toContain('401')
+    expect(e.message).toContain('bad key')
+  })
+})
 
 describe('createMessageAssembler', () => {
   it('组装文本块并回调增量', () => {

@@ -329,6 +329,7 @@ textarea::placeholder { color: var(--text-dim); }
   color: var(--text-dim);
 }
 .settings textarea { min-height: 120px; }
+.settings .hint { font-size: 11px; line-height: 1.5; }
 .prompt-row { display: flex; justify-content: flex-end; }
 .prompt-row .ghost { font-size: 12px; }
 .settings fieldset {
