@@ -5,6 +5,7 @@ import { McpClient } from './agent/mcp/client'
 import { fetchPageContent } from './agent/tools/pageContent'
 import { builtinTools } from './agent/tools/registry'
 import { Chat } from './components/Chat'
+import { IconSettings } from './components/icons'
 import { lastUserQuery } from './components/lastUser'
 import { SettingsView, type McpStatus } from './components/Settings'
 import { TabPicker, type PickerTab } from './components/TabPicker'
@@ -176,8 +177,8 @@ export function App() {
         <span class="model-tag" title={settings.baseUrl}>
           {settings.model}
         </span>
-        <button class="ghost" onClick={() => setView(view === 'chat' ? 'settings' : 'chat')}>
-          ⚙
+        <button class="icon-btn ghost" title="设置" onClick={() => setView(view === 'chat' ? 'settings' : 'chat')}>
+          <IconSettings />
         </button>
       </header>
       {view === 'chat' ? (

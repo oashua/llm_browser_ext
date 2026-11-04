@@ -1,3 +1,5 @@
+import { IconLayers } from './icons'
+
 export interface PickerTab {
   id: number
   title: string
@@ -16,7 +18,11 @@ export function TabPicker(props: TabPickerProps) {
   return (
     <details class="tab-picker">
       <summary>
-        📑 上下文（{chips.length}）
+        <span class="picker-label">
+          <IconLayers />
+          <span>上下文</span>
+          <span class="count">{chips.length}</span>
+        </span>
         {chips.map((id) => (
           <span class="chip" title={byId.get(id)!.url}>
             {byId.get(id)!.title.slice(0, 12)}

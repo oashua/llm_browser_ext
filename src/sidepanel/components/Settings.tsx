@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks'
 import { DEFAULT_SYSTEM_PROMPT } from '../../shared/defaultPrompt'
+import { IconBack } from './icons'
 import type { McpServerConfig, Settings } from '../../shared/types'
 
 export interface McpStatus {
@@ -43,8 +44,9 @@ export function SettingsView(props: SettingsProps) {
   return (
     <div class="settings">
       <div class="settings-head">
-        <button class="ghost" onClick={() => props.onBack()}>
-          ← 返回
+        <button class="ghost back" onClick={() => props.onBack()}>
+          <IconBack />
+          返回
         </button>
         <button onClick={() => props.onSave(form)}>保存</button>
       </div>

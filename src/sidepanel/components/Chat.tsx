@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'preact/hooks'
 import type { ToolOutput, ToolResultBlock, WireMessage } from '../../shared/types'
+import { IconSend, IconStop, IconTrash } from './icons'
 import { renderMarkdown } from './Markdown'
 import { ToolTrace, type TraceEntry } from './ToolTrace'
 
@@ -91,14 +92,16 @@ export function Chat(props: ChatProps) {
           }}
         />
         {props.running ? (
-          <button class="stop" onClick={() => props.onStop()}>
-            停止
+          <button class="icon-btn stop" title="停止" onClick={() => props.onStop()}>
+            <IconStop />
           </button>
         ) : (
-          <button onClick={() => send()}>发送</button>
+          <button class="icon-btn send" title="发送" onClick={() => send()}>
+            <IconSend />
+          </button>
         )}
-        <button class="ghost" title="清空会话" onClick={() => props.onClear()}>
-          🗑
+        <button class="icon-btn ghost" title="清空会话" onClick={() => props.onClear()}>
+          <IconTrash />
         </button>
       </div>
     </div>
