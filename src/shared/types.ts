@@ -46,6 +46,8 @@ export interface ToolOutput {
 export interface ToolContext {
   settings: Settings
   currentTabId?: number
+  /** 由 App 注入：应用配置补丁（持久化+生效）并返回更新后的完整配置 */
+  updateSettings?: (patch: Partial<Settings>) => Promise<Settings>
 }
 
 export interface ToolDef {

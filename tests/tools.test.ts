@@ -73,3 +73,57 @@ describe('dispatchTool', () => {
     expect(out.text).toBe('42')
   })
 })
+
+describe('settings 工具', () => {
+  const base: Settings = { ...settings, apiKey: 'sk-secret', model: 'glm-4.6' }
+
+  it('get_settings 脱敏 apiKey', async () => {
+    const out = await dispatchTool('get_settings', {}, { settings: base }, [])
+    expect(out.text).not.toContain('sk-secret')
+    expect(out.text).toContain('glm-4.6')
+  })
+
+  it('update_settings 应用 patch 并回显新配置', async () => {
+    const applied: unknown[] = []
+    const out = await dispatchTool(
+      'update_settings',
+      { model: 'glm-4.7', maxPageChars: 20000 },
+      {
+        settings: base,
+        updateSettings: async (patch) => {
+          applied.push(patch)
+          return { ...base, ...patch }
+        },
+      },
+      [],
+    )
+    expect(out.isError).toBeFalsy()
+    expect(applied).toEqual([{ model: 'glm-4.7', maxPageChars: 20000 }])
+    expect(out.text).toContain('glm-4.7')
+    expect(out.text).not.toContain('sk-secret')
+  })
+
+  it('update_settings 拒绝修改 apiKey/baseUrl', async () => {
+    for (const key of ['apiKey', 'baseUrl']) {
+      const out = await dispatchTool('update_settings', { [key]: 'x' }, { settings: base }, [])
+      expect(out.isError).toBe(true)
+      expect(out.text).toContain(key)
+    }
+  })
+
+  it('update_settings 拒绝未知字段与非法类型', async () => {
+    const bad = await dispatchTool('update_settings', { nope: 1 }, { settings: base }, [])
+    expect(bad.isError).toBe(true)
+    expect(bad.text).toContain('未知配置项')
+    const badType = await dispatchTool('update_settings', { model: 123 }, { settings: base }, [])
+    expect(badType.isError).toBe(true)
+    expect(badType.text).toContain('model')
+    const badMcp = await dispatchTool('update_settings', { mcpServers: [{ name: 'x' }] }, { settings: base }, [])
+    expect(badMcp.isError).toBe(true)
+  })
+
+  it('update_settings 未注入回调时报错', async () => {
+    const out = await dispatchTool('update_settings', { model: 'm' }, { settings: base }, [])
+    expect(out.isError).toBe(true)
+  })
+})

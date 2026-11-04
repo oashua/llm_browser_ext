@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { runAgentLoop } from '../src/sidepanel/agent/loop'
-import type { ToolDef, WireMessage } from '../src/shared/types'
+import type { Settings, ToolDef, WireMessage } from '../src/shared/types'
 
 const settings = { baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000 }
 
@@ -75,6 +75,34 @@ describe('runAgentLoop', () => {
     expect(tr['type']).toBe('tool_result')
     expect(tr['is_error']).toBe(true)
     expect(String(tr['content'])).toContain('炸了')
+  })
+
+  it('resolve 热更新：每 hop 重取 settings，修改立即生效', async () => {
+    let round = 0
+    const seenModels: string[] = []
+    const streamFn = vi.fn(async (o: { settings: { model: string } }) => {
+      seenModels.push(o.settings.model)
+      round += 1
+      if (round === 1)
+        return {
+          message: { role: 'assistant', content: [{ type: 'tool_use', id: 't', name: 'update_settings', input: { model: 'new' } }] },
+          stopReason: 'tool_use',
+        }
+      return { message: { role: 'assistant', content: [{ type: 'text', text: 'done' }] }, stopReason: 'end_turn' }
+    })
+    let cur: Settings = { ...settings, model: 'old' }
+    await runAgentLoop({
+      settings: cur, system: 's', history: [textMsg('user', 'q')], tools: [], ctx: {
+        settings: cur,
+        updateSettings: async (patch) => {
+          cur = { ...cur, ...patch }
+          return cur
+        },
+      },
+      streamFn: streamFn as any,
+      resolve: () => ({ settings: cur, system: 's', tools: [] }),
+    })
+    expect(seenModels).toEqual(['old', 'new'])
   })
 
   it('达到 hop 上限时停止', async () => {

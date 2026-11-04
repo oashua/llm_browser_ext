@@ -22,6 +22,8 @@ export interface LoopDeps {
   signal?: AbortSignal
   streamFn?: typeof streamMessage
   on?: LoopCallbacks
+  /** 每 hop 重新解析 settings/system/tools（update_settings 修改后立即生效，无需等下一轮） */
+  resolve?: () => { settings: Settings; system: string; tools: ToolDef[] }
 }
 
 // 主循环：流式请求 → 若有 tool_use 则执行并回传 → 重复直到 end_turn 或达上限
@@ -29,15 +31,16 @@ export async function runAgentLoop(deps: LoopDeps): Promise<WireMessage[]> {
   const streamFn = deps.streamFn ?? streamMessage
   const on = deps.on ?? {}
   const messages = [...deps.history]
-  const toolParams: ToolParam[] = deps.tools.map((t) => ({
-    name: t.name,
-    description: t.description,
-    input_schema: t.inputSchema,
-  }))
   for (let hop = 0; hop < MAX_TOOL_HOPS; hop++) {
+    const r = deps.resolve?.() ?? { settings: deps.settings, system: deps.system, tools: deps.tools }
+    const toolParams: ToolParam[] = r.tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      input_schema: t.inputSchema,
+    }))
     const { message, stopReason } = await streamFn({
-      settings: deps.settings,
-      system: deps.system,
+      settings: r.settings,
+      system: r.system,
       messages,
       tools: toolParams.length ? toolParams : undefined,
       signal: deps.signal,
@@ -52,7 +55,7 @@ export async function runAgentLoop(deps: LoopDeps): Promise<WireMessage[]> {
       on.toolCall?.(call.name, call.input)
       let output: ToolOutput
       try {
-        output = await dispatchTool(call.name, (call.input ?? {}) as Record<string, unknown>, deps.ctx, deps.tools)
+        output = await dispatchTool(call.name, (call.input ?? {}) as Record<string, unknown>, { ...deps.ctx, settings: r.settings }, r.tools)
       } catch (e) {
         output = { text: e instanceof Error ? e.message : String(e), isError: true }
       }

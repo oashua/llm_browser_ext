@@ -10,7 +10,7 @@ import { lastUserQuery } from './components/lastUser'
 import { SettingsView, type McpStatus } from './components/Settings'
 import { TabPicker, type PickerTab } from './components/TabPicker'
 import { clearSession, getSession, getSettings, saveSession, saveSettings } from '../shared/storage'
-import type { SessionState, Settings, WireMessage } from '../shared/types'
+import type { PageContent, SessionState, Settings, WireMessage } from '../shared/types'
 
 export function App() {
   const [view, setView] = useState<'chat' | 'settings'>('chat')
@@ -23,6 +23,8 @@ export function App() {
   const [mcpStatuses, setMcpStatuses] = useState<McpStatus[]>([])
   const abortRef = useRef<AbortController | null>(null)
   const mcpRef = useRef<McpClient[]>([])
+  // 工具回调里读取最新配置，避免 send() 闭包快照陈旧
+  const settingsRef = useRef<Settings | null>(null)
 
   const refreshTabs = async (): Promise<void> => {
     const all = await chrome.tabs.query({})
@@ -50,6 +52,7 @@ export function App() {
   useEffect(() => {
     void (async () => {
       const [s, sess] = await Promise.all([getSettings(), getSession()])
+      settingsRef.current = s
       setSettings(s)
       // 标签页 ID 重启后不稳定：过滤已不存在的
       const all = await chrome.tabs.query({})
@@ -100,7 +103,7 @@ export function App() {
     try {
       const validIds = new Set(tabs.map((t) => t.id))
       const contextIds = session.contextTabIds.filter((id) => validIds.has(id))
-      const pages = []
+      const pages: PageContent[] = []
       for (const id of contextIds) {
         try {
           pages.push(await fetchPageContent(id))
@@ -117,7 +120,29 @@ export function App() {
         system,
         history,
         tools,
-        ctx: { settings, currentTabId: contextIds[0] },
+        ctx: {
+          settings,
+          currentTabId: contextIds[0],
+          // update_settings 工具回调：持久化+更新 UI；改 MCP 列表后重连
+          updateSettings: async (patch) => {
+            const cur = settingsRef.current ?? settings
+            const next = { ...cur, ...patch }
+            settingsRef.current = next
+            setSettings(next)
+            await saveSettings(next)
+            if (patch.mcpServers !== undefined) await connectMcp(next)
+            return next
+          },
+        },
+        // 每 hop 热更新：对话中改配置（模型/提示词/MCP）立即生效
+        resolve: () => {
+          const cur = settingsRef.current ?? settings
+          return {
+            settings: cur,
+            system: buildSystemPrompt(cur.systemPrompt, pages, cur.maxPageChars),
+            tools: [...builtinTools(), ...mcpRef.current.flatMap((c) => c.toolDefs())],
+          }
+        },
         signal: ac.signal,
         on: {
           textDelta: (t) => setStreaming((s) => s + t),
@@ -161,6 +186,7 @@ export function App() {
   }
 
   async function saveAndReconnect(s: Settings): Promise<void> {
+    settingsRef.current = s
     setSettings(s)
     await saveSettings(s)
     await connectMcp(s)
