@@ -241,6 +241,7 @@ export function App() {
           settings={settings}
           mcpStatuses={mcpStatuses}
           onSave={(s) => void saveAndReconnect(s)}
+          onImport={(s) => void saveAndReconnect(s)}
           onBack={() => setView('chat')}
         />
       )}

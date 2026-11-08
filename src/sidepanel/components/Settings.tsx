@@ -1,7 +1,8 @@
 import { useState } from 'preact/hooks'
 import { DEFAULT_SYSTEM_PROMPT } from '../../shared/defaultPrompt'
-import { IconBack } from './icons'
+import { parseSettings } from '../../shared/storage'
 import type { McpServerConfig, Settings } from '../../shared/types'
+import { IconBack } from './icons'
 
 export interface McpStatus {
   name: string
@@ -14,11 +15,23 @@ export interface SettingsProps {
   settings: Settings
   mcpStatuses: McpStatus[]
   onSave: (s: Settings) => void
+  onImport: (s: Settings) => void
   onBack: () => void
+}
+
+function exportSettings(s: Settings): void {
+  const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'llm-sidebar-config.json'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 export function SettingsView(props: SettingsProps) {
   const [form, setForm] = useState<Settings>(props.settings)
+  const [importError, setImportError] = useState('')
   const [headersDraft, setHeadersDraft] = useState<Record<number, string>>(
     Object.fromEntries(props.settings.mcpServers.map((s, i) => [i, JSON.stringify(s.headers ?? {}, null, 2)])),
   )
@@ -50,6 +63,35 @@ export function SettingsView(props: SettingsProps) {
         </button>
         <button onClick={() => props.onSave(form)}>保存</button>
       </div>
+
+      <fieldset>
+        <legend>配置导入 / 导出</legend>
+        <div class="io-row">
+          <button class="ghost" onClick={() => exportSettings(form)}>
+            导出为 JSON
+          </button>
+          <label class="ghost import-label">
+            导入 JSON
+            <input
+              type="file"
+              accept="application/json,.json"
+              style="display:none"
+              onChange={(e) => {
+                const file = (e.target as HTMLInputElement).files?.[0]
+                if (!file) return
+                void file.text().then((text) => {
+                  const parsed = parseSettings(text)
+                  if (parsed) props.onImport(parsed)
+                  else setImportError('文件不是有效的配置 JSON（需包含 baseUrl/model 等字段）')
+                })
+                ;(e.target as HTMLInputElement).value = ''
+              }}
+            />
+          </label>
+        </div>
+        {importError && <span class="mcp-status error">{importError}</span>}
+        <span class="hint">导出文件包含 API Key，仅保存在本机，请勿分享给他人</span>
+      </fieldset>
 
       <label>
         API Base URL

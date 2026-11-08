@@ -1,6 +1,26 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { installChromeMock } from './mocks/chrome'
-import { DEFAULT_SETTINGS, clearSession, getSession, getSettings, saveSession, saveSettings } from '../src/shared/storage'
+import { DEFAULT_SETTINGS, clearSession, getSession, getSettings, parseSettings, saveSession, saveSettings } from '../src/shared/storage'
+
+describe('parseSettings（导入解析）', () => {
+  it('合法 JSON 宽松合并默认值', () => {
+    const s = parseSettings(JSON.stringify({ model: 'glm-4.7', mcpServers: [{ name: 'a', url: 'https://x' }] }))
+    expect(s?.model).toBe('glm-4.7')
+    expect(s?.baseUrl).toBe(DEFAULT_SETTINGS.baseUrl)
+    expect(s?.mcpServers).toHaveLength(1)
+  })
+  it('坏 JSON / 非对象 / 无已知字段返回 null', () => {
+    expect(parseSettings('{bad json')).toBeNull()
+    expect(parseSettings('"str"')).toBeNull()
+    expect(parseSettings('[1,2]')).toBeNull()
+    expect(parseSettings(JSON.stringify({ unknown: 1 }))).toBeNull()
+  })
+  it('mcpServers 非法结构被过滤，空 systemPrompt 回填默认', () => {
+    const s = parseSettings(JSON.stringify({ model: 'm', mcpServers: 'oops' }))
+    expect(s?.mcpServers).toEqual([])
+    expect(s?.systemPrompt).toBe(DEFAULT_SETTINGS.systemPrompt)
+  })
+})
 
 afterEach(() => {
   delete (globalThis as Record<string, unknown>).chrome

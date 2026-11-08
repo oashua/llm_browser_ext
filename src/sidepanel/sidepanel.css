@@ -353,3 +353,8 @@ textarea::placeholder { color: var(--text-dim); }
 .mcp-status { font-size: 12px; color: var(--text-dim); }
 .mcp-status.connected { color: var(--ok); }
 .mcp-status.error { color: var(--danger); }
+.io-row { display: flex; gap: 8px; }
+.io-row button, .io-row .import-label {
+  border: 1px solid var(--border-strong);
+}
+.io-row .import-label { cursor: pointer; }
