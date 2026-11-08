@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks'
 import { listModels } from '../agent/anthropic'
 import { DEFAULT_SYSTEM_PROMPT } from '../../shared/defaultPrompt'
+import { maskHeadersJson, mergeMaskedHeaders } from '../../shared/headers'
 import { parseSettings } from '../../shared/storage'
 import type { McpServerConfig, Settings } from '../../shared/types'
 import { IconBack, IconEye } from './icons'
@@ -38,7 +39,7 @@ export function SettingsView(props: SettingsProps) {
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelsError, setModelsError] = useState('')
   const [headersDraft, setHeadersDraft] = useState<Record<number, string>>(
-    Object.fromEntries(props.settings.mcpServers.map((s, i) => [i, JSON.stringify(s.headers ?? {}, null, 2)])),
+    Object.fromEntries(props.settings.mcpServers.map((s, i) => [i, maskHeadersJson(s.headers)])),
   )
 
   function set<K extends keyof Settings>(key: K, value: Settings[K]): void {
@@ -52,11 +53,9 @@ export function SettingsView(props: SettingsProps) {
 
   function saveServerHeaders(i: number, draft: string): void {
     setHeadersDraft({ ...headersDraft, [i]: draft })
-    try {
-      setServer(i, { headers: draft.trim() ? JSON.parse(draft) : undefined })
-    } catch {
-      // JSON 不完整时暂不写入
-    }
+    // *** 掩码值自动回填原始密钥；JSON 不完整时不写入（保持原值）
+    const merged = mergeMaskedHeaders(form.mcpServers[i]?.headers, draft)
+    if (merged.valid) setServer(i, { headers: merged.headers })
   }
 
   async function fetchModels(): Promise<void> {
@@ -215,7 +214,7 @@ export function SettingsView(props: SettingsProps) {
                 rows={2}
                 value={headersDraft[i] ?? '{}'}
                 onInput={(e) => saveServerHeaders(i, (e.target as HTMLTextAreaElement).value)}
-                placeholder={'请求头 JSON，如 {"Authorization":"Bearer …"}'}
+                placeholder={'请求头 JSON；敏感值显示为 ***（保持不变），换密钥请填新值'}
               />
               <span class={`mcp-status ${st?.status ?? 'idle'}`}>
                 {st?.status === 'connected'
