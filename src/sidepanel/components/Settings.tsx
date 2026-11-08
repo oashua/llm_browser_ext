@@ -3,7 +3,7 @@ import { listModels } from '../agent/anthropic'
 import { DEFAULT_SYSTEM_PROMPT } from '../../shared/defaultPrompt'
 import { parseSettings } from '../../shared/storage'
 import type { McpServerConfig, Settings } from '../../shared/types'
-import { IconBack } from './icons'
+import { IconBack, IconEye } from './icons'
 
 export interface McpStatus {
   name: string
@@ -33,6 +33,7 @@ function exportSettings(s: Settings): void {
 export function SettingsView(props: SettingsProps) {
   const [form, setForm] = useState<Settings>(props.settings)
   const [importError, setImportError] = useState('')
+  const [showKey, setShowKey] = useState(false)
   const [models, setModels] = useState<string[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelsError, setModelsError] = useState('')
@@ -122,7 +123,20 @@ export function SettingsView(props: SettingsProps) {
       </label>
       <label>
         API Key
-        <input type="password" value={form.apiKey} onInput={(e) => set('apiKey', (e.target as HTMLInputElement).value)} />
+        <div class="model-row">
+          <input
+            type={showKey ? 'text' : 'password'}
+            value={form.apiKey}
+            onInput={(e) => set('apiKey', (e.target as HTMLInputElement).value)}
+          />
+          <button
+            class="ghost icon-btn"
+            title={showKey ? '隐藏密钥' : '显示密钥'}
+            onClick={() => setShowKey(!showKey)}
+          >
+            <IconEye />
+          </button>
+        </div>
       </label>
       <label>
         模型名
