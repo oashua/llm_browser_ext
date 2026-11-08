@@ -67,7 +67,7 @@ describe('McpClient', () => {
     await client.connect()
     const out = await client.toolDefs()[0].execute(
       { q: 'x' },
-      { settings: { baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false } },
+      { settings: { baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false, contextUseRawHtml: false } },
     )
     expect(out.text).toBe('结果 A')
     expect(out.isError).toBeFalsy()

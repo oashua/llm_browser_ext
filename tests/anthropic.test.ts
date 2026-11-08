@@ -83,7 +83,7 @@ describe('createMessageAssembler', () => {
 describe('streamMessage 错误映射', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  const st = { baseUrl: 'https://x.com', apiKey: 'k', model: 'm', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false }
+  const st = { baseUrl: 'https://x.com', apiKey: 'k', model: 'm', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false, contextUseRawHtml: false }
 
   it('非 2xx 抛 ApiError 且带状态码', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{"error":"bad key"}', { status: 401 })))

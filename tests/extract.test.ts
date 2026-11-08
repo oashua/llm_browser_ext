@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
-import { extractPageContent } from '../src/content/extract'
+import { extractPageContent, extractPageHtml } from '../src/content/extract'
 
 function setupDom(): void {
   document.body.innerHTML = `
@@ -56,5 +56,31 @@ describe('extractPageContent', () => {
     expect(pc.text).toContain('# 页面主标题')
     expect(pc.text).toContain('第二段正文。')
     expect(pc.text).not.toContain('导航')
+  })
+})
+
+describe('extractPageHtml', () => {
+  it('空选择器返回整页 outerHTML，含标签结构', () => {
+    setupDom()
+    const html = extractPageHtml('')!
+    expect(html).toContain('<h1>页面主标题</h1>')
+    expect(html).toContain('<nav>')
+  })
+  it('选择器只返回匹配元素的 outerHTML', () => {
+    setupDom()
+    const html = extractPageHtml('main')!
+    expect(html).toContain('第一段正文')
+    expect(html).not.toContain('<nav>')
+  })
+  it('选择器无匹配返回 null', () => {
+    setupDom()
+    expect(extractPageHtml('.no-exist')).toBeNull()
+  })
+  it('自包含（executeScript 序列化安全）', () => {
+    setupDom()
+    // 形参传 selector，模拟 executeScript 的 args 注入
+    const run = new Function('sel', `"use strict"; return (${extractPageHtml.toString()})(sel);`) as (sel: string) => string | null
+    expect(run('main')).toContain('<h1>页面主标题</h1>')
+    expect(run('.no-exist')).toBeNull()
   })
 })

@@ -56,3 +56,10 @@ export function extractPageContent(): PageContent | null {
     document.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() ?? ''
   return { title: document.title, url: location.href, description, text, images }
 }
+
+// 完整 HTML 提取：selector 为空取 document.documentElement，否则取首个匹配元素。
+// 同样必须自包含（executeScript 通过 args 传参，函数体不能引用任何模块作用域）。
+export function extractPageHtml(selector: string): string | null {
+  const root = selector ? document.querySelector(selector) : document.documentElement
+  return root ? root.outerHTML : null
+}

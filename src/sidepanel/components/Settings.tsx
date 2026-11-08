@@ -84,6 +84,14 @@ export function SettingsView(props: SettingsProps) {
         />
         <span>允许 agent 枚举并读取所有标签页（开放 list_tabs / read_tab 工具；默认关闭以保护隐私，关闭时仅能访问上方勾选的上下文页）</span>
       </label>
+      <label class="toggle-row">
+        <input
+          type="checkbox"
+          checked={form.contextUseRawHtml}
+          onChange={(e) => set('contextUseRawHtml', (e.target as HTMLInputElement).checked)}
+        />
+        <span>上下文使用完整 HTML 而非提取正文（适合前端调试/页面结构分析；token 消耗大幅上升，超长仍会按截断上限裁剪）</span>
+      </label>
       <label>
         系统提示词
         <div class="prompt-row">

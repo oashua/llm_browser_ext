@@ -1,7 +1,7 @@
 import type { Settings, ToolDef } from '../../../shared/types'
 
 // 允许通过对话修改的配置项（apiKey/baseUrl 只能在设置页手动改）
-const EDITABLE_KEYS = ['model', 'systemPrompt', 'maxPageChars', 'mcpServers']
+const EDITABLE_KEYS = ['model', 'systemPrompt', 'maxPageChars', 'mcpServers', 'contextUseRawHtml']
 
 function maskSettings(s: Settings): string {
   return JSON.stringify({ ...s, apiKey: s.apiKey ? '***' : '' }, null, 2)
@@ -16,6 +16,8 @@ function validatePatch(patch: Record<string, unknown>): string | null {
   if (patch.model !== undefined && typeof patch.model !== 'string') return 'model 必须是字符串'
   if (patch.systemPrompt !== undefined && typeof patch.systemPrompt !== 'string')
     return 'systemPrompt 必须是字符串'
+  if (patch.contextUseRawHtml !== undefined && typeof patch.contextUseRawHtml !== 'boolean')
+    return 'contextUseRawHtml 必须是布尔值'
   if (
     patch.maxPageChars !== undefined &&
     (typeof patch.maxPageChars !== 'number' || !Number.isFinite(patch.maxPageChars) || patch.maxPageChars < 500)
@@ -42,13 +44,14 @@ export const getSettingsTool: ToolDef = {
 export const updateSettingsTool: ToolDef = {
   name: 'update_settings',
   description:
-    '修改自己的配置并立即生效。可改字段：model（模型名）、systemPrompt（系统提示词全文，整体替换）、maxPageChars（单页截断字符数，≥500）、mcpServers（完整列表，整体替换，元素 {name,url,headers?}）。apiKey/baseUrl 不可通过对话修改。',
+    '修改自己的配置并立即生效。可改字段：model（模型名）、systemPrompt（系统提示词全文，整体替换）、maxPageChars（单页截断字符数，≥500）、mcpServers（完整列表，整体替换，元素 {name,url,headers?}）、contextUseRawHtml（布尔，上下文是否使用完整 HTML 而非提取正文）。apiKey/baseUrl 不可通过对话修改。',
   inputSchema: {
     type: 'object',
     properties: {
       model: { type: 'string', description: '新模型名，如 glm-4.7' },
       systemPrompt: { type: 'string', description: '新的系统提示词全文' },
       maxPageChars: { type: 'number', description: '单页内容截断上限（字符）' },
+      contextUseRawHtml: { type: 'boolean', description: '上下文注入是否使用完整 HTML（outerHTML）' },
       mcpServers: {
         type: 'array',
         description: 'MCP server 完整列表（整体替换）',

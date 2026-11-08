@@ -89,6 +89,8 @@ export interface Settings {
   maxPageChars: number
   /** 允许 agent 枚举/读取未勾选的标签页（list_tabs/read_tab 工具），默认关闭 */
   allowTabEnumeration: boolean
+  /** 上下文注入使用完整 HTML（outerHTML）而非提取正文，默认关闭（省 token） */
+  contextUseRawHtml: boolean
 }
 
 export interface SessionState {

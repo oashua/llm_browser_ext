@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { buildSystemPrompt, tabAccessNote } from './agent/context'
+import { composeSystem, formatPageContent, formatPageHtml } from './agent/context'
 import { runAgentLoop } from './agent/loop'
 import { McpClient } from './agent/mcp/client'
-import { fetchPageContent } from './agent/tools/pageContent'
+import { fetchPageContent, fetchPageHtml } from './agent/tools/pageContent'
 import { builtinTools } from './agent/tools/registry'
 import { Chat } from './components/Chat'
 import { IconSettings } from './components/icons'
@@ -10,7 +10,7 @@ import { lastUserQuery } from './components/lastUser'
 import { SettingsView, type McpStatus } from './components/Settings'
 import { TabPicker, type PickerTab } from './components/TabPicker'
 import { clearSession, getSession, getSettings, saveSession, saveSettings } from '../shared/storage'
-import type { PageContent, SessionState, Settings, WireMessage } from '../shared/types'
+import type { SessionState, Settings, WireMessage } from '../shared/types'
 
 export function App() {
   const [view, setView] = useState<'chat' | 'settings'>('chat')
@@ -79,6 +79,30 @@ export function App() {
     }
   }, [])
 
+  // 构建上下文页块：开关决定完整 HTML 还是提取正文；提取失败注入标注块（不静默）
+  async function buildPagesSection(s: Settings, contextIds: number[]): Promise<string> {
+    const blocks: string[] = []
+    for (const id of contextIds) {
+      try {
+        blocks.push(
+          s.contextUseRawHtml
+            ? formatPageHtml(await fetchPageHtml(id), '', s.maxPageChars)
+            : formatPageContent(await fetchPageContent(id), s.maxPageChars),
+        )
+      } catch {
+        const tab = tabs.find((t) => t.id === id)
+        const title = tab?.title ?? `标签页 ${id}`
+        const url = tab?.url ?? ''
+        blocks.push(
+          s.contextUseRawHtml
+            ? `<page-html url="${url}">[此页面 HTML 获取失败]</page-html>`
+            : `<page>\n# ${title}\nURL: ${url}\n\n[此页面内容提取失败：可能尚未加载完成，或是浏览器内部页面等不支持提取的地址]\n</page>`,
+        )
+      }
+    }
+    return blocks.join('\n\n')
+  }
+
   async function persistSession(next: SessionState): Promise<void> {
     setSession(next)
     await saveSession(next)
@@ -103,25 +127,9 @@ export function App() {
     try {
       const validIds = new Set(tabs.map((t) => t.id))
       const contextIds = session.contextTabIds.filter((id) => validIds.has(id))
-      const pages: PageContent[] = []
-      for (const id of contextIds) {
-        try {
-          pages.push(await fetchPageContent(id))
-        } catch {
-          // 提取失败不静默：注入标注块，模型能明确告知用户该页未读到
-          const tab = tabs.find((t) => t.id === id)
-          pages.push({
-            title: tab?.title ?? `标签页 ${id}`,
-            url: tab?.url ?? '',
-            description: '',
-            text: '[此页面内容提取失败：可能尚未加载完成，或是浏览器内部页面/商店页等不支持提取的地址]',
-            images: [],
-          })
-        }
-      }
-      const system =
-        buildSystemPrompt(settings.systemPrompt, pages, settings.maxPageChars) +
-        tabAccessNote(settings.allowTabEnumeration)
+      // 页面快照：本轮固定（页面内容与截断长度变化从下一轮生效；其余配置走 resolve 热更新）
+      const pagesSection = await buildPagesSection(settings, contextIds)
+      const system = composeSystem(settings.systemPrompt, pagesSection, settings.allowTabEnumeration)
       const tools = [...builtinTools(settings), ...mcpRef.current.flatMap((c) => c.toolDefs())]
       const ac = new AbortController()
       abortRef.current = ac
@@ -149,9 +157,7 @@ export function App() {
           const cur = settingsRef.current ?? settings
           return {
             settings: cur,
-            system:
-              buildSystemPrompt(cur.systemPrompt, pages, cur.maxPageChars) +
-              tabAccessNote(cur.allowTabEnumeration),
+            system: composeSystem(cur.systemPrompt, pagesSection, cur.allowTabEnumeration),
             tools: [...builtinTools(cur), ...mcpRef.current.flatMap((c) => c.toolDefs())],
           }
         },

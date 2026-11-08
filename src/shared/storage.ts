@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   mcpServers: [],
   maxPageChars: 50000,
   allowTabEnumeration: false,
+  contextUseRawHtml: false,
 }
 
 export async function getSettings(): Promise<Settings> {

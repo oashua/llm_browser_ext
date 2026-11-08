@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSystemPrompt, formatPageContent, tabAccessNote } from '../src/sidepanel/agent/context'
+import { composeSystem, formatPageContent, formatPageHtml, tabAccessNote } from '../src/sidepanel/agent/context'
 import type { PageContent } from '../src/shared/types'
 
 const pc: PageContent = {
@@ -27,15 +27,39 @@ describe('formatPageContent', () => {
   })
 })
 
-describe('buildSystemPrompt', () => {
-  it('无页面时返回原提示词', () => {
-    expect(buildSystemPrompt('BASE', [], 1000)).toBe('BASE')
+describe('formatPageHtml', () => {
+  const html = '<div>' + 'x'.repeat(500) + '</div>'
+  it('整页模式标注字节数并包裹标签', () => {
+    const out = formatPageHtml(html, '', 10000)
+    expect(out).toContain('<page-html bytes="511">')
+    expect(out).toContain('</page-html>')
+    expect(out).toContain('x'.repeat(500))
   })
-  it('多个页面依次拼接', () => {
-    const out = buildSystemPrompt('BASE', [pc, { ...pc, title: '第二页' }], 10000)
+  it('selector 模式标注选择器', () => {
+    const out = formatPageHtml('<main>y</main>', 'main', 10000)
+    expect(out).toContain('selector="main"')
+  })
+  it('超长截断并提示用 selector 缩小范围', () => {
+    const out = formatPageHtml(html, '', 100)
+    expect(out).not.toContain('x'.repeat(500))
+    expect(out).toContain('HTML 超长已截断')
+    expect(out).toContain('selector')
+  })
+})
+
+describe('composeSystem', () => {
+  it('有页面块时拼接提示词与 Tab access 说明', () => {
+    const out = composeSystem('BASE', '<page>x</page>', true)
     expect(out.startsWith('BASE')).toBe(true)
-    expect(out).toContain('# 示例页')
-    expect(out).toContain('# 第二页')
+    expect(out).toContain('# 用户选择的上下文标签页')
+    expect(out).toContain('<page>x</page>')
+    expect(out).toContain('list_tabs')
+  })
+  it('无页面块时仅提示词与说明', () => {
+    const out = composeSystem('BASE', '', false)
+    expect(out.startsWith('BASE')).toBe(true)
+    expect(out).not.toContain('用户选择的上下文标签页')
+    expect(out).toContain('disabled')
   })
 })
 

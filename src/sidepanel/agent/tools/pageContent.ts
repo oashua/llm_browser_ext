@@ -1,5 +1,5 @@
-import { extractPageContent } from '../../../content/extract'
-import { formatPageContent } from '../context'
+import { extractPageContent, extractPageHtml } from '../../../content/extract'
+import { formatPageContent, formatPageHtml } from '../context'
 import type { PageContent, ToolContext, ToolDef } from '../../../shared/types'
 
 const UNREADABLE_PREFIXES = [
@@ -7,8 +7,8 @@ const UNREADABLE_PREFIXES = [
   'https://chromewebstore.google.com', 'https://chrome.google.com/webstore',
 ]
 
-// 提取指定标签页（默认当前活动页）内容；内部页面抛错
-export async function fetchPageContent(tabId?: number): Promise<PageContent> {
+// 定位目标标签页（默认当前活动页）并做可读性检查
+async function resolveTabId(tabId?: number): Promise<number> {
   let id = tabId
   if (id == null) {
     const [active] = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -18,9 +18,29 @@ export async function fetchPageContent(tabId?: number): Promise<PageContent> {
   const tab = await chrome.tabs.get(id)
   if (UNREADABLE_PREFIXES.some((p) => tab.url?.startsWith(p)))
     throw new Error(`页面 ${tab.url ?? ''} 不支持内容提取（浏览器内部页面）`)
+  return id
+}
+
+// 提取指定标签页结构化内容
+export async function fetchPageContent(tabId?: number): Promise<PageContent> {
+  const id = await resolveTabId(tabId)
   const [res] = await chrome.scripting.executeScript({ target: { tabId: id }, func: extractPageContent })
   if (!res?.result) throw new Error('页面内容提取失败（页面可能尚未加载完成）')
   return res.result as PageContent
+}
+
+// 提取指定标签页完整 HTML（selector 为空取整页）
+export async function fetchPageHtml(tabId?: number, selector = ''): Promise<string> {
+  const id = await resolveTabId(tabId)
+  const [res] = await chrome.scripting.executeScript({
+    target: { tabId: id },
+    func: extractPageHtml,
+    args: [selector],
+  })
+  if (typeof res?.result !== 'string') {
+    throw new Error(selector ? `选择器 ${selector} 未匹配到元素` : '页面 HTML 获取失败')
+  }
+  return res.result
 }
 
 export const pageContentTool: ToolDef = {
@@ -47,4 +67,22 @@ export const readTabTool: ToolDef = {
   execute: async (args, ctx) => ({
     text: formatPageContent(await fetchPageContent(args.tabId as number), ctx.settings.maxPageChars),
   }),
+}
+
+export const pageHtmlTool: ToolDef = {
+  name: 'get_page_html',
+  description:
+    '获取指定标签页的完整 HTML（outerHTML）。默认整页；页面很大时建议用 selector 参数（CSS 选择器）只取关心的部分（如 main、某个组件根元素），否则会被截断。注意：不含 shadow DOM 内部与运行时 JS 状态。',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      tabId: { type: 'number', description: '目标标签页 ID，默认当前标签页' },
+      selector: { type: 'string', description: 'CSS 选择器，只取首个匹配元素的 outerHTML；默认整页' },
+    },
+  },
+  execute: async (args, ctx) => {
+    const selector = (args.selector as string) ?? ''
+    const html = await fetchPageHtml(args.tabId as number | undefined, selector)
+    return { text: formatPageHtml(html, selector, ctx.settings.maxPageChars) }
+  },
 }

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { runAgentLoop } from '../src/sidepanel/agent/loop'
 import type { Settings, ToolDef, WireMessage } from '../src/shared/types'
 
-const settings = { baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false }
+const settings = { baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false, contextUseRawHtml: false }
 
 function textMsg(role: 'user' | 'assistant', text: string): WireMessage {
   return { role, content: [{ type: 'text', text }] }

@@ -10,7 +10,7 @@ afterEach(() => {
 })
 
 const settings: Settings = {
-  baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false,
+  baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false, contextUseRawHtml: false,
 }
 const ctx: ToolContext = { settings, currentTabId: 1 }
 
@@ -28,7 +28,9 @@ function mockChromeForTabs(): void {
       get: async (id: number) => ({ id, title: 't', url: id === 2 ? 'chrome://settings' : 'https://a.com' }),
     },
     scripting: {
-      executeScript: async () => [{ result: page }],
+      executeScript: async (inj: { args?: unknown[] }) =>
+        // 按注入参数分流：带 selector 的走 HTML 提取，否则走内容提取
+        [{ result: inj.args?.length ? '<main>正文</main>' : page }],
     },
   })
 }
@@ -65,6 +67,19 @@ describe('dispatchTool', () => {
     mockChromeForTabs()
     const out = await dispatchTool('get_page_content', {}, ctx, [])
     expect(out.text).toBe(formatPageContent(page, 50000))
+  })
+  it('get_page_html 返回 HTML 块；选择器无匹配报错', async () => {
+    mockChromeForTabs()
+    const out = await dispatchTool('get_page_html', { selector: 'main' }, ctx, [])
+    expect(out.isError).toBeFalsy()
+    expect(out.text).toContain('<page-html selector="main"')
+    expect(out.text).toContain('<main>正文</main>')
+    // 无匹配（executeScript 返回 null → 非 string）
+    const chrome2 = (globalThis as any).chrome
+    chrome2.scripting.executeScript = async () => [{ result: null }]
+    const miss = await dispatchTool('get_page_html', { selector: '.x' }, ctx, [])
+    expect(miss.isError).toBe(true)
+    expect(miss.text).toContain('未匹配到元素')
   })
   it('未知工具返回错误输出', async () => {
     mockChromeForTabs()

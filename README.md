@@ -24,6 +24,7 @@ npm run build     # 产出 dist/
 | 工具 | 作用 |
 |---|---|
 | `get_page_content` | 提取指定标签页结构化正文（刷新上下文页用） |
+| `get_page_html` | 获取完整 HTML（outerHTML），支持 CSS 选择器缩小范围 |
 | `get_screenshot` | 截取当前可视区域（vision 输入） |
 | `get_page_images` | 抓取页面图片（默认面积最大 3 张） |
 | `get_settings` / `update_settings` | 查看/修改自身配置（模型、提示词、截断长度、MCP） |
