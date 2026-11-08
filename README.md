@@ -13,6 +13,10 @@ npm run build     # 产出 dist/
 
 `chrome://extensions` → 开发者模式 → 加载已解压 → 选择 `dist/`。
 
+## 安装（发布包）
+
+下载 `release/llm-sidebar-v*.zip` → 解压到任意目录 → `chrome://extensions` → 开发者模式 → 加载已解压 → 选解压目录。zip 根即 manifest 所在层，可直接上传 Chrome Web Store。
+
 ## 使用
 
 1. 点击扩展图标打开侧边栏，⚙ 设置 API Base URL / Key / 模型名（任意 Anthropic 兼容端点，如 GLM 的 Anthropic 兼容端点、OpenRouter）
