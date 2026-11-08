@@ -3,7 +3,7 @@ import { defineManifest } from '@crxjs/vite-plugin'
 export default defineManifest({
   manifest_version: 3,
   name: 'LLM Sidebar',
-  version: '0.1.0',
+  version: '0.1.1',
   description: '在侧边栏与 LLM 对话，基于当前网页内容回答',
   action: {},
   side_panel: { default_path: 'src/sidepanel/index.html' },
