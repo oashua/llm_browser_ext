@@ -361,7 +361,23 @@ textarea::placeholder { color: var(--text-dim); }
 .chip-btn:hover { border-color: var(--border-strong); }
 .chip-btn.active { background: var(--accent); color: var(--accent-text); }
 .io-row { display: flex; gap: 8px; }
-.io-row button, .io-row .import-label {
+/* 导出是 button、导入是 label（内藏 file input），统一样式保持一致 */
+.io-row > button,
+.io-row > .import-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 14px;
+  font-size: 13px;
   border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
 }
-.io-row .import-label { cursor: pointer; }
+.io-row > button:hover,
+.io-row > .import-label:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
