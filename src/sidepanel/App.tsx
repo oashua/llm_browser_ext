@@ -108,7 +108,15 @@ export function App() {
         try {
           pages.push(await fetchPageContent(id))
         } catch {
-          // 失效标签页跳过
+          // 提取失败不静默：注入标注块，模型能明确告知用户该页未读到
+          const tab = tabs.find((t) => t.id === id)
+          pages.push({
+            title: tab?.title ?? `标签页 ${id}`,
+            url: tab?.url ?? '',
+            description: '',
+            text: '[此页面内容提取失败：可能尚未加载完成，或是浏览器内部页面/商店页等不支持提取的地址]',
+            images: [],
+          })
         }
       }
       const system = buildSystemPrompt(settings.systemPrompt, pages, settings.maxPageChars)
