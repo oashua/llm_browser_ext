@@ -1,52 +1,64 @@
-# LLM Sidebar（浏览器 LLM 侧边栏助手）
+# LLM Sidebar — 在侧边栏和 AI 聊你正在看的网页
 
-Chrome MV3 扩展：在侧边栏与 LLM 对话，基于当前/选定标签页内容回答。支持 Anthropic 兼容端点、远程 MCP（streamable HTTP）、页面文本/截图/图片读取。
+打开任意网页，点开侧边栏直接问：「这页讲了什么」「帮我总结要点」「这两篇文章结论有什么不同」。AI 读到的不是网页快照，而是**你眼前真实的页面内容**——正文、图片、甚至完整 DOM。
 
-## 开发
+## 它能做什么
+
+**📖 网页问答**
+基于当前页面内容回答问题，会说明信息来自哪个页面。长文总结、术语解释、表格数据提取都能做。
+
+**🗂 多标签页对比**
+侧边栏顶部勾选多个标签页，AI 同时参考它们的内容——「对比这两页的价格方案」「把这三个标签页的要点各总结三条」。
+
+**🖼 看得见图片**
+让 AI 截取当前页面截图、或抓取页面里的图片来分析图表和界面（需搭配视觉模型，如 glm-4v 系列）。工具调用的截图会直接显示在对话里，你能看到 AI 看到了什么。
+
+**🔍 完整 HTML 模式（前端调试）**
+开启设置后，AI 直接读页面渲染后的完整 HTML；也可以只取某个选择器匹配的局部 DOM。「这个组件的 class 结构是什么」「帮我看下这个表格的语义」这类问题它终于能答了。
+
+**🔌 接你自己的模型**
+任意 Anthropic 协议兼容端点都能用：智谱 GLM（`https://open.bigmodel.cn/api/anthropic`）、官方 Claude、OpenRouter……填好端点和密钥后可一键拉取可用模型列表点选。
+
+**🧩 MCP 扩展**
+配置远程 MCP server（streamable HTTP），AI 就能使用其中的工具——联网搜索、笔记库、数据库，随你接入。
+
+**⚙️ 对话改配置**
+不用进设置页：「换到 glm-4.7」「把单页上限调到 20 万」「上下文改用完整 HTML」，说完即生效并保存。密钥和端点地址不开放对话修改，只能手动改。
+
+## 快速开始
+
+**安装**（二选一）：
+
+- 下载 [Releases](https://github.com/oashua/llm_browser_ext/releases) 里的 zip → 解压 → `chrome://extensions` → 开发者模式 → 加载已解压 → 选解压目录
+- 或克隆本仓库后 `npm install && npm run build`，加载 `dist/`
+
+**配置**（一分钟）：
+
+1. 侧边栏右上角 ⚙ 进入设置
+2. 填 API Base URL（GLM 填 `https://open.bigmodel.cn/api/anthropic`）、API Key
+3. 点「获取列表」选模型 → 保存
+
+**开问**：随便打开一个网页，在侧边栏输入问题即可。Enter 发送，Shift+Enter 换行。
+
+## 使用技巧
+
+- 顶部 📑 勾选哪些标签页，AI 就只看哪些页——想加参考页就勾上
+- AI 答不上当前页内容时，先确认该页在 📑 里被勾选
+- 页面内容更新后想让它重新读，直接说「重新读一下当前页」
+- 配置可导出 JSON（设置页底部），换电脑导入即恢复
+
+## 隐私
+
+- API Key 与全部配置只存在你本机浏览器（`chrome.storage.local`），导出文件也只落在本机
+- 默认 AI **只能**读取你勾选的标签页；「允许读取所有标签页」是设置里的手动开关，且 AI 无法通过对话自行打开
+- 除你配置的模型端点和 MCP server 外，不向任何地方发送数据
+
+## 从源码构建
 
 ```bash
 npm install
-npm test          # Vitest 单测
-npm run check     # tsc 类型检查
-npm run build     # 产出 dist/
+npm test      # 74 个测试
+npm run build # 产出 dist/
 ```
 
-`chrome://extensions` → 开发者模式 → 加载已解压 → 选择 `dist/`。
-
-## 安装（发布包）
-
-下载 `release/llm-sidebar-v*.zip` → 解压到任意目录 → `chrome://extensions` → 开发者模式 → 加载已解压 → 选解压目录。zip 根即 manifest 所在层，可直接上传 Chrome Web Store。
-
-## 使用
-
-1. 点击扩展图标打开侧边栏，⚙ 设置 API Base URL / Key / 模型名（任意 Anthropic 兼容端点，如 GLM 的 Anthropic 兼容端点、OpenRouter）
-2. 顶部 📑 勾选作为上下文的标签页（默认当前活动页）
-3. 直接提问；agent 可调用内置工具（读页面/截图/取图/列标签页/读其他标签页）与已配置的 MCP 工具
-
-## 内置工具
-
-| 工具 | 作用 |
-|---|---|
-| `get_page_content` | 提取指定标签页结构化正文（刷新上下文页用） |
-| `get_page_html` | 获取完整 HTML（outerHTML），支持 CSS 选择器缩小范围 |
-| `get_screenshot` | 截取当前可视区域（vision 输入） |
-| `get_page_images` | 抓取页面图片（默认面积最大 3 张） |
-| `get_settings` / `update_settings` | 查看/修改自身配置（模型、提示词、截断长度、MCP） |
-| `list_tabs` / `read_tab` | 枚举/读取任意标签页（**默认不开启**，需在设置中打开「允许 agent 枚举并读取所有标签页」） |
-
-隐私边界：默认 agent 只能看到侧边栏顶部 📑 勾选的上下文页；`list_tabs`/`read_tab` 由设置中的开关控制，且该开关**不能**通过对话（`update_settings`）修改，只能手动切换。
-
-## 架构
-
-agent 循环（Anthropic SSE 流式 + 工具分发 + MCP client）运行在 side panel 页面内，直接调用 `chrome.scripting`/`chrome.tabs`；页面提取按需注入 content script；Service Worker 仅注册面板。设计文档：`docs/superpowers/specs/2026-11-03-browser-llm-sidebar-design.md`，实现计划：`docs/superpowers/plans/2026-11-03-browser-llm-sidebar.md`。
-
-## 验收清单（手动 E2E）
-
-1. 加载 `dist/` → 侧边栏打开 → 配置 baseUrl/apiKey/model → 保存无报错
-2. 打开普通网页提问「这个页面讲了什么」→ 回答引用页面实际内容
-3. 要求看图表/图片 → 触发 `get_screenshot` / `get_page_images`，vision 模型能描述
-4. TabPicker 勾选多标签页对比提问；让 agent `list_tabs` + `read_tab`
-5. 添加远程 MCP server → 显示已连接与工具数 → 对话中调用 MCP 工具
-6. 填错 key → 错误卡片 → 修复后重试恢复
-7. `chrome://settings` 提问 → 明确提示内部页面不可提取
-8. 重启浏览器 → 历史恢复；清空会话按钮有效
+技术栈：Chrome MV3 · TypeScript · Preact · Vite。设计与实现文档见 `docs/superpowers/`。
