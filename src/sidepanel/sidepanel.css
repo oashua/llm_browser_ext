@@ -241,7 +241,8 @@ textarea::placeholder { color: var(--text-dim); }
   color: var(--text-dim);
 }
 .bubble a { color: inherit; text-underline-offset: 2px; }
-.bubble table { border-collapse: collapse; margin: 0.5em 0; font-size: 12.5px; }
+.bubble img { max-width: 100%; height: auto; border-radius: 6px; }
+.bubble table { border-collapse: collapse; margin: 0.5em 0; font-size: 12.5px; display: block; overflow-x: auto; }
 .bubble :is(th, td) { border: 1px solid var(--border); padding: 4px 8px; }
 
 /* ============ 工具轨迹 ============ */
