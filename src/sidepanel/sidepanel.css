@@ -284,6 +284,7 @@ textarea::placeholder { color: var(--text-dim); }
   font-size: 11.5px;
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
 }
+.trace-img { display: block; max-width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 
 /* ============ 错误卡片 ============ */
 .error-card {

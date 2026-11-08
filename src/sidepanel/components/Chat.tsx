@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'preact/hooks'
-import type { ToolOutput, ToolResultBlock, WireMessage } from '../../shared/types'
+import type { ToolResultBlock, WireMessage } from '../../shared/types'
 import { IconSend, IconStop, IconTrash } from './icons'
 import { renderMarkdown } from './Markdown'
 import { ToolTrace, type TraceEntry } from './ToolTrace'
+import { traceOutputFromResult } from './traceOutput'
 
 export interface ChatProps {
   messages: WireMessage[]
@@ -40,12 +41,7 @@ export function Chat(props: ChatProps) {
           id: b.id,
           name: b.name,
           input: b.input,
-          output: result
-            ? ({
-                text: typeof result.content === 'string' ? result.content : '[含图片的结果]',
-                isError: result.is_error,
-              } as ToolOutput)
-            : undefined,
+          output: result ? traceOutputFromResult(result) : undefined,
         }
         items.push({ kind: 'trace', entry })
       }

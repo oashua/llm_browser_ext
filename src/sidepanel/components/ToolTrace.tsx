@@ -22,6 +22,14 @@ export function ToolTrace({ entry }: { entry: TraceEntry }) {
       <div class="trace-body">
         <pre class="trace-input">{JSON.stringify(entry.input, null, 2)}</pre>
         {entry.output && <pre class="trace-output">{entry.output.text.slice(0, 2000)}</pre>}
+        {entry.output?.images?.map((im, i) => (
+          <img
+            class="trace-img"
+            key={i}
+            src={`data:${im.source.media_type};base64,${im.source.data}`}
+            alt={`工具结果图 ${i + 1}`}
+          />
+        ))}
       </div>
     </details>
   )
