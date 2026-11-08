@@ -92,6 +92,19 @@ export interface StreamOptions {
   onTextDelta?: (t: string) => void
 }
 
+// 拉取端点的可用模型列表（GET /v1/models，Anthropic 协议）
+export async function listModels(settings: Settings): Promise<string[]> {
+  const base = normalizeBaseUrl(settings.baseUrl)
+  const url = `${base}/v1/models?limit=100`
+  const res = await fetch(url, {
+    headers: { 'x-api-key': settings.apiKey, 'anthropic-version': '2023-06-01' },
+  })
+  if (!res.ok) throw new ApiError(res.status, await res.text().catch(() => ''), url)
+  const json = (await res.json()) as { data?: Array<{ id?: string }> }
+  const ids = (json.data ?? []).map((m) => String(m.id ?? '')).filter(Boolean)
+  return [...new Set(ids)].sort()
+}
+
 export async function streamMessage(opts: StreamOptions): Promise<{ message: WireMessage; stopReason: string }> {
   const base = normalizeBaseUrl(opts.settings.baseUrl)
   const url = `${base}/v1/messages`

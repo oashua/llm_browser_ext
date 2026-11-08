@@ -353,6 +353,12 @@ textarea::placeholder { color: var(--text-dim); }
 .mcp-status { font-size: 12px; color: var(--text-dim); }
 .mcp-status.connected { color: var(--ok); }
 .mcp-status.error { color: var(--danger); }
+.model-row { display: flex; gap: 6px; }
+.model-row input { flex: 1; min-width: 0; }
+.model-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; }
+.chip-btn { height: 24px; padding: 0 10px; font-size: 12px; background: var(--surface-2); color: var(--text); }
+.chip-btn:hover { border-color: var(--border-strong); }
+.chip-btn.active { background: var(--accent); color: var(--accent-text); }
 .io-row { display: flex; gap: 8px; }
 .io-row button, .io-row .import-label {
   border: 1px solid var(--border-strong);

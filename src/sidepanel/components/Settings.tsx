@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { listModels } from '../agent/anthropic'
 import { DEFAULT_SYSTEM_PROMPT } from '../../shared/defaultPrompt'
 import { parseSettings } from '../../shared/storage'
 import type { McpServerConfig, Settings } from '../../shared/types'
@@ -32,6 +33,9 @@ function exportSettings(s: Settings): void {
 export function SettingsView(props: SettingsProps) {
   const [form, setForm] = useState<Settings>(props.settings)
   const [importError, setImportError] = useState('')
+  const [models, setModels] = useState<string[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
+  const [modelsError, setModelsError] = useState('')
   const [headersDraft, setHeadersDraft] = useState<Record<number, string>>(
     Object.fromEntries(props.settings.mcpServers.map((s, i) => [i, JSON.stringify(s.headers ?? {}, null, 2)])),
   )
@@ -51,6 +55,20 @@ export function SettingsView(props: SettingsProps) {
       setServer(i, { headers: draft.trim() ? JSON.parse(draft) : undefined })
     } catch {
       // JSON 不完整时暂不写入
+    }
+  }
+
+  async function fetchModels(): Promise<void> {
+    setLoadingModels(true)
+    setModelsError('')
+    try {
+      const list = await listModels(form)
+      setModels(list)
+      if (!list.length) setModelsError('端点未返回模型列表，可手动填写模型名')
+    } catch (e) {
+      setModelsError(`获取失败：${e instanceof Error ? e.message : String(e)}（仍可手动填写）`)
+    } finally {
+      setLoadingModels(false)
     }
   }
 
@@ -108,7 +126,26 @@ export function SettingsView(props: SettingsProps) {
       </label>
       <label>
         模型名
-        <input value={form.model} onInput={(e) => set('model', (e.target as HTMLInputElement).value)} placeholder="claude-sonnet-5" />
+        <div class="model-row">
+          <input
+            value={form.model}
+            onInput={(e) => set('model', (e.target as HTMLInputElement).value)}
+            placeholder="claude-sonnet-5"
+          />
+          <button class="ghost" disabled={loadingModels} onClick={() => void fetchModels()}>
+            {loadingModels ? '获取中…' : '获取列表'}
+          </button>
+        </div>
+        {models.length > 0 && (
+          <div class="model-chips">
+            {models.map((m) => (
+              <button class={`chip-btn ${m === form.model ? 'active' : ''}`} key={m} onClick={() => set('model', m)}>
+                {m}
+              </button>
+            ))}
+          </div>
+        )}
+        {modelsError && <span class="mcp-status error">{modelsError}</span>}
       </label>
       <label>
         单页截断字符数

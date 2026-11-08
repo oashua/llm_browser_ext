@@ -1,5 +1,26 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, createMessageAssembler, normalizeBaseUrl, streamMessage } from '../src/sidepanel/agent/anthropic'
+import { ApiError, createMessageAssembler, listModels, normalizeBaseUrl, streamMessage } from '../src/sidepanel/agent/anthropic'
+
+describe('listModels', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const st = { baseUrl: 'https://x.com', apiKey: 'k', model: 'm', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false, contextUseRawHtml: false }
+
+  it('返回排序去重的模型 id 列表', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ data: [{ id: 'glm-4.7' }, { id: 'glm-4.6' }, { id: 'glm-4.7' }] }), { status: 200 })),
+    )
+    expect(await listModels(st)).toEqual(['glm-4.6', 'glm-4.7'])
+  })
+  it('非 2xx 抛 ApiError（HTML 错误页同样给定向提示）', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 403 })))
+    await expect(listModels(st)).rejects.toThrowError(ApiError)
+  })
+  it('data 缺失或为空返回空数组', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })))
+    expect(await listModels(st)).toEqual([])
+  })
+})
 
 describe('normalizeBaseUrl', () => {
   it('规范的协议根地址保持不变', () => {
