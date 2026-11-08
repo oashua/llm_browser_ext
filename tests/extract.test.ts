@@ -44,4 +44,17 @@ describe('extractPageContent', () => {
     // display:none 的图片仍在 document.images 中，但尺寸信息保留（过滤在取图阶段做）
     expect(pc.images.length).toBe(2)
   })
+
+  it('自包含：脱离模块作用域仍可执行（executeScript 序列化安全）', () => {
+    setupDom()
+    // 模拟 chrome.scripting.executeScript({func})：只有函数源码被带走，
+    // 模块级常量/辅助函数不可见——引用它们会 ReferenceError
+    const run = new Function(`"use strict"; return (${extractPageContent.toString()})();`) as
+      () => ReturnType<typeof extractPageContent>
+    const pc = run()!
+    expect(pc.title).toBe('测试页')
+    expect(pc.text).toContain('# 页面主标题')
+    expect(pc.text).toContain('第二段正文。')
+    expect(pc.text).not.toContain('导航')
+  })
 })

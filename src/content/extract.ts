@@ -1,25 +1,21 @@
 import type { PageContent } from '../shared/types'
 
-// 本文件被 chrome.scripting.executeScript({ func }) 序列化注入：
-// 函数体内不得引用任何运行时 import（仅允许 import type），必须自包含。
-
-const SKIP_TAGS = new Set([
-  'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'IFRAME', 'CANVAS',
-  'NAV', 'FOOTER', 'ASIDE', 'FORM', 'BUTTON', 'SELECT', 'OPTION',
-])
-
-const BLOCK_TAGS = new Set([
-  'P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'PRE', 'BLOCKQUOTE',
-  'FIGCAPTION', 'TD', 'TH', 'DT', 'DD', 'DIV', 'SECTION', 'ARTICLE',
-  'MAIN', 'HEADER', 'UL', 'OL', 'TABLE', 'TR', 'DL', 'BODY',
-])
-
-function hasBlockChild(el: Element): boolean {
-  return Array.from(el.children).some((c) => BLOCK_TAGS.has(c.tagName))
-}
-
-// 提取当前页面结构化内容（在页面上下文中执行）
+// 提取当前页面结构化内容（在页面上下文中执行）。
+// 必须完全自包含：chrome.scripting.executeScript({ func }) 只序列化函数本身，
+// 一切模块级常量/辅助函数在注入后都不可见（引用即 ReferenceError），
+// 因此 SKIP_TAGS/BLOCK_TAGS/hasBlockChild 全部内联在函数体内。
 export function extractPageContent(): PageContent | null {
+  const SKIP_TAGS = new Set([
+    'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'IFRAME', 'CANVAS',
+    'NAV', 'FOOTER', 'ASIDE', 'FORM', 'BUTTON', 'SELECT', 'OPTION',
+  ])
+  const BLOCK_TAGS = new Set([
+    'P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'PRE', 'BLOCKQUOTE',
+    'FIGCAPTION', 'TD', 'TH', 'DT', 'DD', 'DIV', 'SECTION', 'ARTICLE',
+    'MAIN', 'HEADER', 'UL', 'OL', 'TABLE', 'TR', 'DL', 'BODY',
+  ])
+  const hasBlockChild = (el: Element): boolean => Array.from(el.children).some((c) => BLOCK_TAGS.has(c.tagName))
+
   const body = document.body
   if (!body) return null
   const out: string[] = []
@@ -47,7 +43,7 @@ export function extractPageContent(): PageContent | null {
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
-  // 用 querySelectorAll 而非 document.images（happy-dom 等环境未实现后者，语义等价）
+  // 用 querySelectorAll 而非 document.images（部分环境未实现后者，语义等价）
   const images = Array.from(document.querySelectorAll('img'))
     .map((img) => ({
       src: img.src,

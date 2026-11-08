@@ -46,12 +46,13 @@ describe('fetchPageContent', () => {
 })
 
 describe('dispatchTool', () => {
-  it('list_tabs 输出全部标签页', async () => {
+  it('list_tabs/read_tab 已移除：返回未知工具错误（隐私边界）', async () => {
     mockChromeForTabs()
-    const out = await dispatchTool('list_tabs', {}, ctx, [])
-    expect(out.text).toContain('[1](当前) 标签一')
-    expect(out.text).toContain('[2] 标签二')
-    expect(out.isError).toBeFalsy()
+    for (const name of ['list_tabs', 'read_tab']) {
+      const out = await dispatchTool(name, {}, ctx, [])
+      expect(out.isError).toBe(true)
+      expect(out.text).toContain('未知工具')
+    }
   })
   it('get_page_content 输出格式化页面', async () => {
     mockChromeForTabs()

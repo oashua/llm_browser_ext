@@ -25,25 +25,13 @@ export async function fetchPageContent(tabId?: number): Promise<PageContent> {
 
 export const pageContentTool: ToolDef = {
   name: 'get_page_content',
-  description: '获取指定标签页的结构化正文（标题、URL、摘要、正文）。默认当前活动标签页；先用 list_tabs 查 tabId。',
+  description:
+    '获取指定标签页的结构化正文（标题、URL、摘要、正文），用于刷新上下文页的最新内容。默认当前活动标签页。',
   inputSchema: {
     type: 'object',
     properties: { tabId: { type: 'number', description: '目标标签页 ID，默认当前标签页' } },
   },
   execute: async (args, ctx: ToolContext) => ({
     text: formatPageContent(await fetchPageContent(args.tabId as number | undefined), ctx.settings.maxPageChars),
-  }),
-}
-
-export const readTabTool: ToolDef = {
-  name: 'read_tab',
-  description: '读取指定标签页完整内容并加入当前对话上下文，用于需要参考其他页面时。',
-  inputSchema: {
-    type: 'object',
-    properties: { tabId: { type: 'number', description: '目标标签页 ID（必填）' } },
-    required: ['tabId'],
-  },
-  execute: async (args, ctx) => ({
-    text: formatPageContent(await fetchPageContent(args.tabId as number), ctx.settings.maxPageChars),
   }),
 }

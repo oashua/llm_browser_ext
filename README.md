@@ -23,10 +23,12 @@ npm run build     # 产出 dist/
 
 | 工具 | 作用 |
 |---|---|
-| `get_page_content` | 提取指定标签页结构化正文 |
+| `get_page_content` | 提取指定标签页结构化正文（刷新上下文页用） |
 | `get_screenshot` | 截取当前可视区域（vision 输入） |
 | `get_page_images` | 抓取页面图片（默认面积最大 3 张） |
-| `list_tabs` / `read_tab` | 列出/读取其他标签页 |
+| `get_settings` / `update_settings` | 查看/修改自身配置（模型、提示词、截断长度、MCP） |
+
+隐私边界：agent **不能**枚举或读取用户未勾选的标签页（无 `list_tabs`/`read_tab` 工具）；跨页上下文一律通过侧边栏顶部的 📑 勾选器添加。
 
 ## 架构
 
