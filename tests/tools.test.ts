@@ -10,7 +10,7 @@ afterEach(() => {
 })
 
 const settings: Settings = {
-  baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000,
+  baseUrl: '', apiKey: '', model: '', systemPrompt: '', mcpServers: [], maxPageChars: 50000, allowTabEnumeration: false,
 }
 const ctx: ToolContext = { settings, currentTabId: 1 }
 
@@ -46,13 +46,20 @@ describe('fetchPageContent', () => {
 })
 
 describe('dispatchTool', () => {
-  it('list_tabs/read_tab 已移除：返回未知工具错误（隐私边界）', async () => {
+  it('标签页枚举开关：默认关闭，开启后 list_tabs/read_tab 可用', async () => {
     mockChromeForTabs()
-    for (const name of ['list_tabs', 'read_tab']) {
-      const out = await dispatchTool(name, {}, ctx, [])
-      expect(out.isError).toBe(true)
-      expect(out.text).toContain('未知工具')
-    }
+    // 默认（allowTabEnumeration 缺省为 false）：不可用
+    const off = await dispatchTool('list_tabs', {}, ctx, [])
+    expect(off.isError).toBe(true)
+    // 开启后：可枚举
+    const onCtx = { ...ctx, settings: { ...settings, allowTabEnumeration: true } }
+    const on = await dispatchTool('list_tabs', {}, onCtx, [])
+    expect(on.isError).toBeFalsy()
+    expect(on.text).toContain('标签一')
+    // read_tab 走注入提取
+    const read = await dispatchTool('read_tab', { tabId: 1 }, onCtx, [])
+    expect(read.isError).toBeFalsy()
+    expect(read.text).toContain('正文')
   })
   it('get_page_content 输出格式化页面', async () => {
     mockChromeForTabs()

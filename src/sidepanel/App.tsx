@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { buildSystemPrompt } from './agent/context'
+import { buildSystemPrompt, tabAccessNote } from './agent/context'
 import { runAgentLoop } from './agent/loop'
 import { McpClient } from './agent/mcp/client'
 import { fetchPageContent } from './agent/tools/pageContent'
@@ -119,8 +119,10 @@ export function App() {
           })
         }
       }
-      const system = buildSystemPrompt(settings.systemPrompt, pages, settings.maxPageChars)
-      const tools = [...builtinTools(), ...mcpRef.current.flatMap((c) => c.toolDefs())]
+      const system =
+        buildSystemPrompt(settings.systemPrompt, pages, settings.maxPageChars) +
+        tabAccessNote(settings.allowTabEnumeration)
+      const tools = [...builtinTools(settings), ...mcpRef.current.flatMap((c) => c.toolDefs())]
       const ac = new AbortController()
       abortRef.current = ac
       const returned = await runAgentLoop({
@@ -147,8 +149,10 @@ export function App() {
           const cur = settingsRef.current ?? settings
           return {
             settings: cur,
-            system: buildSystemPrompt(cur.systemPrompt, pages, cur.maxPageChars),
-            tools: [...builtinTools(), ...mcpRef.current.flatMap((c) => c.toolDefs())],
+            system:
+              buildSystemPrompt(cur.systemPrompt, pages, cur.maxPageChars) +
+              tabAccessNote(cur.allowTabEnumeration),
+            tools: [...builtinTools(cur), ...mcpRef.current.flatMap((c) => c.toolDefs())],
           }
         },
         signal: ac.signal,

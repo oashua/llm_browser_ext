@@ -35,3 +35,16 @@ export const pageContentTool: ToolDef = {
     text: formatPageContent(await fetchPageContent(args.tabId as number | undefined), ctx.settings.maxPageChars),
   }),
 }
+
+export const readTabTool: ToolDef = {
+  name: 'read_tab',
+  description: '读取指定标签页完整内容并加入当前对话上下文（需在设置中开启标签页枚举）。',
+  inputSchema: {
+    type: 'object',
+    properties: { tabId: { type: 'number', description: '目标标签页 ID（必填）' } },
+    required: ['tabId'],
+  },
+  execute: async (args, ctx) => ({
+    text: formatPageContent(await fetchPageContent(args.tabId as number), ctx.settings.maxPageChars),
+  }),
+}

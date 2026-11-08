@@ -87,6 +87,8 @@ export interface Settings {
   systemPrompt: string
   mcpServers: McpServerConfig[]
   maxPageChars: number
+  /** 允许 agent 枚举/读取未勾选的标签页（list_tabs/read_tab 工具），默认关闭 */
+  allowTabEnumeration: boolean
 }
 
 export interface SessionState {

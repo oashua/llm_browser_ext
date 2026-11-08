@@ -27,8 +27,9 @@ npm run build     # 产出 dist/
 | `get_screenshot` | 截取当前可视区域（vision 输入） |
 | `get_page_images` | 抓取页面图片（默认面积最大 3 张） |
 | `get_settings` / `update_settings` | 查看/修改自身配置（模型、提示词、截断长度、MCP） |
+| `list_tabs` / `read_tab` | 枚举/读取任意标签页（**默认不开启**，需在设置中打开「允许 agent 枚举并读取所有标签页」） |
 
-隐私边界：agent **不能**枚举或读取用户未勾选的标签页（无 `list_tabs`/`read_tab` 工具）；跨页上下文一律通过侧边栏顶部的 📑 勾选器添加。
+隐私边界：默认 agent 只能看到侧边栏顶部 📑 勾选的上下文页；`list_tabs`/`read_tab` 由设置中的开关控制，且该开关**不能**通过对话（`update_settings`）修改，只能手动切换。
 
 ## 架构
 

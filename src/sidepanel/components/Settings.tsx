@@ -76,6 +76,14 @@ export function SettingsView(props: SettingsProps) {
           onInput={(e) => set('maxPageChars', Number((e.target as HTMLInputElement).value) || 50000)}
         />
       </label>
+      <label class="toggle-row">
+        <input
+          type="checkbox"
+          checked={form.allowTabEnumeration}
+          onChange={(e) => set('allowTabEnumeration', (e.target as HTMLInputElement).checked)}
+        />
+        <span>允许 agent 枚举并读取所有标签页（开放 list_tabs / read_tab 工具；默认关闭以保护隐私，关闭时仅能访问上方勾选的上下文页）</span>
+      </label>
       <label>
         系统提示词
         <div class="prompt-row">

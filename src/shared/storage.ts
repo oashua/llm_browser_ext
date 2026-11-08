@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: Settings = {
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   mcpServers: [],
   maxPageChars: 50000,
+  allowTabEnumeration: false,
 }
 
 export async function getSettings(): Promise<Settings> {

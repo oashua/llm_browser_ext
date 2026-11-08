@@ -14,3 +14,10 @@ export function buildSystemPrompt(base: string, pages: PageContent[], maxChars: 
   const blocks = pages.map((pc) => formatPageContent(pc, maxChars)).join('\n\n')
   return `${base}\n\n# 用户选择的上下文标签页\n\n${blocks}`
 }
+
+// 标签页访问权限说明（随 allowTabEnumeration 开关动态附加到 system）
+export function tabAccessNote(enabled: boolean): string {
+  return enabled
+    ? '\n\n# Tab access\nlist_tabs and read_tab are enabled: you may list all browser tabs and read any tab by tabId when it helps answer.'
+    : '\n\n# Tab access\nlist_tabs/read_tab are disabled. The context contains only tabs the user selected; if asked about other tabs, tell the user to select them in the tab picker.';
+}

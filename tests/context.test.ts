@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSystemPrompt, formatPageContent } from '../src/sidepanel/agent/context'
+import { buildSystemPrompt, formatPageContent, tabAccessNote } from '../src/sidepanel/agent/context'
 import type { PageContent } from '../src/shared/types'
 
 const pc: PageContent = {
@@ -36,5 +36,18 @@ describe('buildSystemPrompt', () => {
     expect(out.startsWith('BASE')).toBe(true)
     expect(out).toContain('# 示例页')
     expect(out).toContain('# 第二页')
+  })
+})
+
+describe('tabAccessNote', () => {
+  it('开启时说明工具可用', () => {
+    const note = tabAccessNote(true)
+    expect(note).toContain('list_tabs')
+    expect(note).toContain('read_tab')
+  })
+  it('关闭时引导用户勾选标签页', () => {
+    const note = tabAccessNote(false)
+    expect(note).toContain('disabled')
+    expect(note).not.toContain('may list all tabs')
   })
 })
