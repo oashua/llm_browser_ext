@@ -130,11 +130,17 @@ section { scroll-margin-top: 76px; }
 .section-head p { color: var(--dim); font-size: 16px; line-height: 1.8; margin: 0 auto; max-width: 560px; }
 
 /* ============ 功能小节 ============ */
-.feature { display: grid; grid-template-columns: 5fr 6fr; gap: 44px; align-items: center; margin-bottom: 84px; }
+.feature { display: grid; grid-template-columns: 4fr 8fr; gap: 40px; align-items: center; margin-bottom: 84px; }
+/* rev 布局：shot 在左，反转轨道比例使 shot 仍占宽列 */
+.feature.rev { grid-template-columns: 8fr 4fr; }
 .feature.rev .f-copy { order: 2; }
 .feature.rev .shot { order: 1; }
-.feature, .feature.rev { margin-left: 32px; margin-right: 32px; }
-.hero .shot { margin-left: 32px; margin-right: 32px; }
+/* 宽屏：演示图向容器外出血，网页内容区更宽 */
+@media (min-width: 1260px) {
+  .hero .shot { margin-left: -88px; margin-right: -88px; }
+  .feature .shot { margin-right: -88px; }
+  .feature.rev .shot { margin-left: -88px; margin-right: 0; }
+}
 .step { margin-left: 32px; margin-right: 32px; }
 .f-icon {
   width: 44px; height: 44px; border-radius: 10px;
@@ -229,7 +235,7 @@ section { scroll-margin-top: 76px; }
 .sp-chip {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 999px; padding: 0 8px; font-size: 11px; line-height: 18px;
-  color: var(--text); max-width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--text); max-width: 118px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .sp-spacer { flex: 1; }
 .sp-model { font-size: 12px; color: var(--dim); white-space: nowrap; }
@@ -239,21 +245,6 @@ section { scroll-margin-top: 76px; }
   color: var(--dim); flex-shrink: 0;
 }
 .sp-gear svg { width: 16px; height: 16px; }
-/* 下拉的标签列表（展开态） */
-.sp-tablist {
-  position: absolute; z-index: 5; top: calc(100% + 6px); left: 0;
-  width: 300px; background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-}
-.sp-tablist label {
-  display: flex; gap: 8px; padding: 6px 8px; align-items: center;
-  border-radius: var(--radius-sm); cursor: default;
-}
-.sp-tablist label:hover { background: var(--surface-2); }
-.sp-tablist input { width: 14px; height: 14px; accent-color: var(--accent); flex-shrink: 0; }
-.sp-tablist .t { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sp-tablist .t .u { color: var(--dim); font-size: 10.5px; }
 /* 消息列表 */
 .sp-msgs { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; min-height: 0; }
 .sp-b {
@@ -456,31 +447,30 @@ footer { border-top: 1px solid var(--border); margin-top: 84px; padding: 36px 0 
     <a class="btn" href="https://github.com/oashua/llm_browser_ext/releases" target="_blank" rel="noopener">下载安装</a>
     <a class="btn ghost" href="#start">快速开始</a>
   </div>
-  <p class="hero-note">支持智谱 GLM、官方 Claude、OpenRouter 等任意 Anthropic 协议兼容端点 · 可接入 MCP 工具</p>
 
   <!-- 📸 截图替换：assets/shot-hero.png（整窗含侧边栏，约 1600×1000） -->
   <figure class="shot reveal" data-shot="hero" style="margin-top:52px">
     <div class="mock">
       <div class="win-bar">
         <span class="win-dots"><i></i><i></i><i></i></span>
-        <span class="win-tab"><span class="fav" style="background:#a2a9b1">W</span>大语言模型 - 维基百科</span>
-        <span class="win-tab dim hide-m"><span class="fav" style="background:#1f2328">G</span>GitHub Pricing</span>
+        <span class="win-tab"><span class="fav" style="background:#a2a9b1">W</span>大型语言模型 - 维基百科</span>
         <span class="win-plus">+</span>
       </div>
       <div class="win-url">
         <span class="win-nav">←<span class="hide-m"> →</span> ⟳</span>
-        <span class="win-addr"><span class="lock">🔒</span>zh.wikipedia.org/wiki/大语言模型</span>
+        <span class="win-addr"><span class="lock">🔒</span>zh.wikipedia.org/wiki/大型语言模型</span>
       </div>
-      <div class="win-body">
+      <div class="win-body" style="min-height:620px">
         <div class="page">
-          <h1>大语言模型</h1>
+          <h1>大型语言模型</h1>
           <div class="site">维基百科，自由的百科全书</div>
-          <p><b>大语言模型</b>（LLM）是一种以深度学习构建、使用海量文本数据训练的自然语言处理模型，参数量通常达到数十亿以上，通过预测序列中的下一个词来学习语言的统计结构。</p>
-          <p>研究表明，当模型规模跨过某个阈值后，会出现训练目标中未曾明确指定的能力，例如思维链推理、多步算术与指令泛化，这类现象被称为「涌现能力」。</p>
+          <p><b>大型语言模型</b>（英语：large language model，LLM），也称大语言模型，简称大模型，是一种基于人工神经网络的语言模型。其名称中的「大型」指模型具有庞大的参数量（通常在数十亿以上，如 GPT-3 含 1750 亿参数）以及巨大的训练数据规模，通常采用自监督机器学习，能够在海量无标注的文本上训练。其中包含 Gemini 和 GPT-4o 在内的部分模型具有多模态功能，能够同时处理文字、图片、音频和视频等不同输入形式。大多数 LLM 采用了生成式预训练变换器（GPT），它们为 ChatGPT、Gemini 和 Claude 等聊天机器人提供了核心功能。</p>
           <div class="hr"></div>
-          <h2>应用</h2>
-          <p>大语言模型被广泛用于对话助手、代码生成、摘要与翻译等场景；同时也带来幻觉、偏见与成本方面的挑战，是当前 AI 安全研究的重点对象。</p>
-          <blockquote>本条目介绍大语言模型的定义、训练方法、涌现能力与应用风险。</blockquote>
+          <h2>历史</h2>
+          <p>在 2017 年 NeurIPS 会议上，谷歌研究人员在他们的里程碑式论文《Attention Is All You Need》中介绍了 Transformer 架构，催生了 GPT、BERT 等模型。2022 年面向消费者的基于浏览器的 ChatGPT 吸引了普通民众的想象力。2025 年 1 月，DeepSeek 发布了 DeepSeek-R1，这是一个拥有 6710 亿个参数的开放权重模型，其性能与 OpenAI o1 相当，但成本却低得多。</p>
+          <div class="hr"></div>
+          <h2>偏差和局限性</h2>
+          <blockquote>虽然 ChatGPT 等大语言模型在生成类人文本方面表现出了卓越的能力，但它们很容易受到算法偏见影响，继承和放大训练数据中存在的偏见。此外，这些模型通常面临事实准确性的限制——「幻觉」指大语言模型输出与客观事实不符或具有误导性的内容。</blockquote>
         </div>
         <aside class="panel">
           <div class="sp-topbar">
@@ -488,10 +478,10 @@ footer { border-top: 1px solid var(--border); margin-top: 84px; padding: 36px 0 
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
               上下文
               <span class="sp-count">1</span>
-              <span class="sp-chip">大语言模型</span>
+              <span class="sp-chip">大型语言模型 - 维基百科，自由的百科全书</span>
             </span>
             <span class="sp-spacer"></span>
-            <span class="sp-model">glm-4.7</span>
+            <span class="sp-model">glm-5.3</span>
             <span class="sp-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
           </div>
           <div class="sp-msgs">
@@ -504,17 +494,14 @@ footer { border-top: 1px solid var(--border); margin-top: 84px; padding: 36px 0 
               </div>
             </div>
             <div class="sp-b bot">
-              <p>这页是维基百科「大语言模型」条目，要点：</p>
-              <ol>
-                <li><b>定义</b>：以海量文本训练、参数量达数十亿以上的语言模型；</li>
-                <li><b>涌现能力</b>：规模跨过阈值后出现思维链推理等未明确训练的能力；</li>
-                <li><b>应用与风险</b>：广泛用于对话、代码生成，同时存在幻觉与偏见挑战。</li>
-              </ol>
-              <span class="src">来源：大语言模型 - 维基百科（当前标签页）</span>
+              <p>这页是维基百科的「大型语言模型（LLM）」条目，系统介绍模型的定义、历史、技术架构、训练方法及其局限。</p>
+              <p><b>核心能力</b>：LLM 是参数量庞大（数十亿以上，如 GPT-3 有 1750 亿参数）、基于 Transformer 架构的神经网络语言模型，通过在海量无标注文本上自监督训练获得通用能力，无需针对特定任务定制即可完成翻译、摘要、代码生成等任务，部分模型（GPT-4o、Gemini）还具备图像、音频等多模态能力。</p>
+              <p><b>发展与关键节点</b>：从早期统计语言模型和 RNN，到 2017 年 Transformer 架构（《Attention Is All You Need》）成为转折点，催生 GPT、BERT；2022 年 ChatGPT 引爆公众关注；近年开源模型（LLaMA、DeepSeek-R1）崛起，2024 年起还出现了专门强化推理能力的「推理模型」（如 o1）。</p>
+              <p><b>局限</b>：LLM 会继承并放大训练数据中的偏见（语言、政治、文化等），并存在「幻觉」；此外训练成本高昂，还存在版权、隐私等争议。</p>
             </div>
           </div>
           <div class="sp-input">
-            <span class="box">输入问题，Enter 发送…</span>
+            <span class="box">询问当前网页…（Enter 发送，Shift+Enter 换行）</span>
             <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
           </div>
         </aside>
@@ -528,7 +515,6 @@ footer { border-top: 1px solid var(--border); margin-top: 84px; padding: 36px 0 
 <section class="section container" id="features">
   <div class="section-head">
     <h2>两大核心能力</h2>
-    <p>先把最重要的事做对，其余的才叫锦上添花。</p>
   </div>
 
   <!-- 核心 1：读到真实渲染的页面 -->
@@ -537,11 +523,11 @@ footer { border-top: 1px solid var(--border); margin-top: 84px; padding: 36px 0 
       <div class="f-icon">📖</div>
       <h3>AI 读到的，就是你看到的</h3>
       <p>
-        把链接丢给网页版 AI？它在服务端 fetch 到的是<strong>没跑过 JavaScript 的空壳</strong>——
+        把链接丢给AI？它在服务端 fetch 到的是<strong>没跑过 JavaScript 的空壳</strong>——
         动态加载的信息流、要点开的折叠内容、登录后才可见的页面，统统抓不到。
       </p>
       <p>
-        LLM Sidebar 读的是你浏览器里<strong>渲染完成的页面</strong>：你看到什么，它就读到什么。
+        LLM Sidebar 通过<code>document.body</code>获取<strong>渲染完成的页面</strong>：你看到什么，它就读到什么。
         正文、动态内容、表格数据都能答，来源与工具轨迹全程可查。
       </p>
       <div class="f-tags"><span>动态页面读得到</span><span>登录后内容读得到</span><span>轨迹透明</span></div>
@@ -551,66 +537,50 @@ footer { border-top: 1px solid var(--border); margin-top: 84px; padding: 36px 0 
       <div class="mock">
         <div class="win-bar">
           <span class="win-dots"><i></i><i></i><i></i></span>
-          <span class="win-tab"><span class="fav" style="background:#3574e0">热</span>AI 前沿 · 今日热榜</span>
+          <span class="win-tab"><span class="fav" style="background:#056de8">知</span>知乎热榜</span>
           <span class="win-plus">+</span>
         </div>
         <div class="win-url">
           <span class="win-nav">←<span class="hide-m"> →</span> ⟳</span>
-          <span class="win-addr"><span class="lock">🔒</span>feed.aifront.dev/hot</span>
+          <span class="win-addr"><span class="lock">🔒</span>zhihu.com/hot</span>
         </div>
-        <div class="win-body">
+        <div class="win-body" style="min-height:640px">
           <div class="page">
-            <h1>今日热榜</h1>
-            <div class="site">内容由 JavaScript 动态加载 · 已登录</div>
-            <p><b>1. 开源模型追上闭源的临界点在哪？</b><br>参数效率比拼的焦点从总量转向数据质量…… <span style="color:#5f6368">💬 312 · ⬆ 1.2k</span></p>
+            <h1>知乎热榜</h1>
+            <div class="site">关注 · 推荐 · <b>热榜</b> · 专栏 · 圈子 · AI Works · 故事 · 直答 ｜ 消息（37）· 私信（99+）· 已登录</div>
+            <p><b>1. S16 半决赛 BLG 3:1 淘汰卫冕冠军 T1，终结 T1 四连冠可能性，如何评价这场比赛？</b><br><span style="color:#5f6368">5723 万热度 · 分享</span></p>
             <div class="hr"></div>
-            <p><b>2. 上下文长度是不是越多越好？</b><br>三组对照实验表明超长上下文的召回率并不线性…… <span style="color:#5f6368">💬 208 · ⬆ 890</span></p>
+            <p><b>2. 自媒体曝胖东来爆火的卡蓓诺洗发水疑为非日本制造，胖东来否认产地造假并将启动维权，哪些信…</b><br><span style="color:#5f6368">3475 万热度 · 分享</span></p>
             <div class="hr"></div>
-            <p><b>3. Agent 工具调用的可靠性测试基准</b><br>新基准覆盖 40 类真实网站操作场景…… <span style="color:#5f6368">💬 96 · ⬆ 540</span></p>
-            <p style="text-align:center;color:#1a73e8;margin-top:12px">加载更多 ↓</p>
+            <p><b>3. 黄渤自曝今年几乎没戏拍，如何看待实力派演员陷入空窗期？</b><br><span style="color:#5f6368">723 万热度 · 分享</span></p>
+            <div class="hr"></div>
+            <p><b>4. BLG 连斩 LCK 三队晋级总决赛，他们能在决赛上击败 GEN，一穿四夺冠吗？</b><br><span style="color:#5f6368">622 万热度 · 分享</span></p>
+            <div class="hr"></div>
+            <p><b>5. 实验猴涨至 26 万一只，部分养殖企业已无猴可售，会对医药行业产生哪些影响？涨价热潮可能还会…</b><br><span style="color:#5f6368">355 万热度 · 分享</span></p>
           </div>
           <aside class="panel">
             <div class="sp-topbar">
               <span class="picker">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
-                上下文 <span class="sp-count">1</span> <span class="sp-chip">今日热榜</span>
+                上下文 <span class="sp-count">1</span> <span class="sp-chip">知乎热榜</span>
               </span>
               <span class="sp-spacer"></span>
-              <span class="sp-model">glm-4.7</span>
+              <span class="sp-model">glm-5.3</span>
               <span class="sp-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             </div>
             <div class="sp-msgs">
               <div class="sp-b user">这个信息流里大家主要在讨论什么？</div>
-              <div class="sp-trace open">
-                <div class="hd">
-                  <span class="sp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
-                  <span class="nm">get_page_content</span>
-                  <span class="st ok">完成</span>
-                </div>
-                <div class="bd"><pre>{
-  "tabId": 3312
-}
-# 今日热榜
-URL: https://feed.aifront.dev/hot
-
-1. 开源模型追上闭源的临界点
-   在哪？参数效率比拼的焦点
-   从总量转向数据质量……
-2. 上下文长度是不是越多越好？
-   ……</pre></div>
-              </div>
               <div class="sp-b bot">
-                <p>讨论集中在三个话题：</p>
-                <ol>
-                  <li><b>开源 vs 闭源</b>：焦点从参数量转向数据质量；</li>
-                  <li><b>长上下文</b>：召回率并不随长度线性提升；</li>
-                  <li><b>Agent 可靠性</b>：新基准覆盖 40 类真实网站操作。</li>
-                </ol>
-                <span class="src">来源：今日热榜（当前标签页）</span>
+                <p>这是<b>知乎热榜</b>（zhihu.com/hot），当前讨论主要集中在以下几个方面：</p>
+                <p>🐼 <b>电竞霸榜</b>：全球总决赛霸榜：BLG 3:1 淘汰卫冕冠军 T1、终结其四连冠（第 1 条，5723 万热度），以及 BLG 连斩 LCK 三队、能否一穿四夺冠等话题，占了榜单多条。</p>
+                <p>🔥 <b>社会热点</b>：胖东来卡蓓诺洗发水「产地造假」传闻，公司发文否认并启动维权；黄仁勋公开承认婚外情并道歉，英伟达股价夜盘跌超 3%；黄渤曝今年几乎没戏拍，实力派演员空窗期引发讨论。</p>
+                <p>⚽ <b>体育</b>：大连英博夺中超冠军，旗下景区对山东游客免费 100 天；韦世豪停赛与成都蓉城丢冠的关联。</p>
+                <p>💼 <b>科技</b>：实验猴涨至 26 万一只对医药行业的影响；车企「去宁德时代化」（转向欣旺达、中创新航等）；上海微电子新一代光刻机模型亮相；SpaceX 星舰第 15 次试飞将首次尝试飞船+助推器同时回收。</p>
+                <p>🌿 <b>生活方式与社会观察</b>：研究生毕业生转行当环卫工「待遇好」的就业观；一家五口住 83 平米称「豪宅」；网评 AI 内容有「塑料感」。</p>
               </div>
             </div>
             <div class="sp-input">
-              <span class="box">输入问题，Enter 发送…</span>
+              <span class="box">询问当前网页…（Enter 发送，Shift+Enter 换行）</span>
               <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
             </div>
           </aside>
@@ -639,60 +609,58 @@ URL: https://feed.aifront.dev/hot
       <div class="mock">
         <div class="win-bar">
           <span class="win-dots"><i></i><i></i><i></i></span>
-          <span class="win-tab"><span class="fav" style="background:#1f2328">G</span>GitHub Pricing</span>
-          <span class="win-tab dim hide-m"><span class="fav" style="background:#e24329">L</span>GitLab Pricing</span>
+          <span class="win-tab dim hide-m"><span class="fav" style="background:#1f2328">G</span>GitHub Pricing</span>
+          <span class="win-tab"><span class="fav" style="background:#e24329">L</span>Pricing | GitLab</span>
           <span class="win-plus">+</span>
         </div>
         <div class="win-url">
           <span class="win-nav">←<span class="hide-m"> →</span> ⟳</span>
-          <span class="win-addr"><span class="lock">🔒</span>github.com/pricing</span>
+          <span class="win-addr"><span class="lock">🔒</span>about.gitlab.com/pricing</span>
         </div>
-        <div class="win-body">
+        <div class="win-body" style="min-height:640px">
           <div class="page">
-            <h1>Pricing</h1>
-            <div class="site">Like all of GitHub's products……</div>
-            <p><b>Free</b> — 无限公开/私有仓库，Actions 2000 分钟/月，Community 支持。</p>
-            <p><b>Pro</b> — $4/月，额外的高级工具与 Insights。</p>
-            <p><b>Team</b> — $4/人/月，受保护的分支与团队审核。</p>
-            <p><b>Enterprise</b> — $21/人/月，SSO 与审计日志。</p>
+            <div class="site">GitLab Orbit is generally available. Increase agent accuracy and lower token cost → Read the announcement</div>
+            <h1>Get started with GitLab</h1>
+            <div class="site">The intelligent orchestration platform for DevSecOps.</div>
+            <p style="color:#5f6368">GitLab.com · Self Managed · Dedicated<br>GitLab.com is cloud-hosted by us. Instant setup, getting you to value quicker.</p>
+            <div class="hr"></div>
+            <p><b>Free</b><br>For individuals working on personal projects and open source contributions<br><span style="color:#5f6368">$0 per user/month · No credit card required</span></p>
+            <div class="hr"></div>
+            <p><b>Premium</b> · Most popular<br>For scaling organizations seeking enhanced productivity and collaboration<br><span style="color:#5f6368">$29 per user/month, billed annually</span></p>
+            <div class="hr"></div>
+            <p><b>Ultimate</b><br>For enterprises requiring advanced security and compliance capabilities<br><span style="color:#5f6368">Contact us for custom pricing</span></p>
           </div>
           <aside class="panel">
             <div class="sp-topbar">
-              <span class="picker" style="background:var(--surface-2);color:var(--text)">
+              <span class="picker">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
                 上下文 <span class="sp-count">2</span>
-                <span class="sp-tablist">
-                  <label><input type="checkbox" checked><span class="t">GitHub Pricing<br><span class="u">github.com</span></span></label>
-                  <label><input type="checkbox" checked><span class="t">Pricing | GitLab<br><span class="u">about.gitlab.com</span></span></label>
-                  <label><input type="checkbox"><span class="t">大语言模型 - 维基百科</span></label>
-                </span>
+                <span class="sp-chip">GitHub Pricing</span>
+                <span class="sp-chip">Pricing | GitLab</span>
               </span>
               <span class="sp-spacer"></span>
-              <span class="sp-model">glm-4.7</span>
+              <span class="sp-model">glm-5.3</span>
               <span class="sp-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             </div>
             <div class="sp-msgs">
               <div class="sp-b user">对比这两页的免费版有什么差异？</div>
-              <div class="sp-trace">
-                <div class="hd">
-                  <span class="sp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
-                  <span class="nm">read_tab</span>
-                  <span class="st ok">完成 ×2</span>
-                </div>
-              </div>
               <div class="sp-b bot">
-                <p>两页免费版的关键差异：</p>
+                <p>两个标签页（GitHub Pricing 和 GitLab Pricing）的免费版信息，对比如下：</p>
+                <p><b>核心额度对比</b></p>
                 <table>
                   <tr><th></th><th>GitHub Free</th><th>GitLab Free</th></tr>
-                  <tr><td>私有仓库</td><td>无限</td><td>无限</td></tr>
-                  <tr><td>CI/CD</td><td>2000 分钟/月</td><td>400 分钟/月</td></tr>
-                  <tr><td>团队规模</td><td>不限人数</td><td>每顶级组 5 人</td></tr>
+                  <tr><td>价格</td><td>$0</td><td>$0（无需信用卡）</td></tr>
+                  <tr><td>CI/CD</td><td>2,000 分钟/月（公共仓库免费）</td><td>400 计算分钟/月</td></tr>
+                  <tr><td>存储</td><td>500MB Packages 存储</td><td>10 GiB 可调整存储（整体）</td></tr>
+                  <tr><td>用户/协作</td><td>私有仓库协作者不限</td><td>每个顶级组仅 5 个用户</td></tr>
+                  <tr><td>仓库</td><td>无限公开/私有仓库</td><td>源代码管理 &amp; CI/CD</td></tr>
                 </table>
-                <span class="src">来源：GitHub Pricing · GitLab Pricing</span>
+                <p><b>GitHub Free 优势</b>：CI/CD 分钟多 5 倍（2,000 vs 400）；私有仓库协作者无限制，而 GitLab 免费版 5 人是硬上限；Dependabot 安全/版本更新，且大量功能对公共仓库免费开放（仓库规则、CodeQL 代码扫描、Secret Scanning 等）。</p>
+                <p><b>GitLab Free 优势</b>：存储额度（10 GiB）远大于 GitHub 的 500MB（GitHub 指的是 Packages 存储，不含仓库本身）；内置静态应用安全测试（SAST）基础扫描；Duo Agent Platform 可通过购买 Credits 附加。</p>
               </div>
             </div>
             <div class="sp-input">
-              <span class="box">输入问题，Enter 发送…</span>
+              <span class="box">询问当前网页…（Enter 发送，Shift+Enter 换行）</span>
               <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
             </div>
           </aside>
@@ -703,8 +671,7 @@ URL: https://feed.aifront.dev/hot
 
   <!-- 小功能合集（截图不需要替换：无演示图） -->
   <div class="mini-head">
-    <h3>更多顺手的小功能</h3>
-    <p>不喧宾夺主，需要时都在。</p>
+    <h3>其他功能特性</h3>
   </div>
   <div class="mini-grid">
     <div class="mcard">
@@ -746,7 +713,6 @@ URL: https://feed.aifront.dev/hot
   <div class="container">
     <div class="section-head">
       <h2>你的数据留在你手里</h2>
-      <p>没有账号、没有云端、没有统计上报。</p>
     </div>
     <div class="privacy-grid">
       <div class="pcard reveal">
@@ -772,7 +738,7 @@ URL: https://feed.aifront.dev/hot
 <section class="section container" id="start">
   <div class="section-head">
     <h2>三步开问</h2>
-    <p>从安装到第一次提问，不超过五分钟。</p>
+    <p>从安装到第一次提问，两分钟</p>
   </div>
   <div class="steps">
     <div class="step reveal">
@@ -790,7 +756,7 @@ URL: https://feed.aifront.dev/hot
       <h3>配置模型</h3>
       <ol>
         <li>侧边栏右上角 ⚙ 进入设置</li>
-        <li>填 API Base URL 与 API Key<br>（GLM 填 <code>https://open.bigmodel.cn/api/anthropic</code>）</li>
+        <li>填 API Base URL 与 API Key<br></li>
         <li>点「获取列表」选模型 → 保存</li>
       </ol>
       <p class="alt">支持任意 Anthropic 协议兼容端点：官方 Claude、OpenRouter 等</p>
@@ -803,7 +769,6 @@ URL: https://feed.aifront.dev/hot
         <li>Enter 发送，Shift+Enter 换行</li>
         <li>顶部「上下文」勾选想让 AI 参考的标签页</li>
       </ol>
-      <p class="alt">页面内容更新后，说「重新读一下当前页」即可刷新</p>
     </div>
   </div>
 </section>
@@ -823,7 +788,6 @@ URL: https://feed.aifront.dev/hot
       <a href="https://github.com/oashua/llm_browser_ext/releases" target="_blank" rel="noopener">Releases</a>
       <a href="https://github.com/oashua/llm_browser_ext/issues" target="_blank" rel="noopener">问题反馈</a>
     </span>
-    <span class="meta">Chrome MV3 · TypeScript · Preact · 开源免费</span>
   </div>
 </footer>
 
