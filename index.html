@@ -1,0 +1,845 @@
+<!doctype html>
+<!--
+  LLM Sidebar 产品展示页（GitHub Pages）
+  ─────────────────────────────────────────────────────────────
+  自包含单文件：无外部依赖、无构建步骤。
+  发布方式：仓库 Settings → Pages → Deploy from a branch → main / (root)。
+
+  📸 截图替换说明
+  页面中所有功能演示图目前是纯 CSS 绘制的模拟界面，外层标记为
+  <figure class="shot" data-shot="<id>">。拍摄真实截图后，把该 figure 内
+  整个 <div class="mock">…</div> 替换为：
+      <img src="assets/shot-<id>.png" alt="…" width="1600" height="1000" loading="lazy">
+  每张图去什么网站、问什么、期望什么回复，见 docs/screenshot-guide.md。
+  各图 id：hero / qa / tabs（小功能合集无演示图，不需要截图）
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Sidebar — 打开任意网页，和 AI 聊你正在看的页面</title>
+<meta name="description" content="Chrome 侧边栏 AI 助手：AI 直接读浏览器里渲染完成的真实页面——动态内容、登录后页面都能读，全程不离开浏览器。支持任意模型端点与 MCP。开源免费。">
+<meta property="og:title" content="LLM Sidebar — 和 AI 聊你正在看的网页">
+<meta property="og:description" content="Chrome 侧边栏 AI 助手：读到真实渲染的页面 · 全程浏览器内零切换 · 任意模型端点 · MCP">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f7f7f8">
+<script>document.documentElement.classList.add('js')</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2318181b'/%3E%3Cpath d='M18 24h28M18 33h20' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='42' cy='42' r='4' fill='%23fff'/%3E%3C/svg%3E">
+
+<style>
+/* ============ 设计 token（取自扩展 sidepanel.css 亮色变量） ============ */
+:root {
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f0f0f2;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text: #18181b;
+  --dim: #71717a;
+  --accent: #18181b;
+  --accent-text: #ffffff;
+  --ok: #16a34a;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font: system-ui, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+section { scroll-margin-top: 76px; }
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ============ 滚动淡入 ============ */
+.js .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+.js .reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ============ 顶栏 ============ */
+.topnav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(247, 247, 248, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.topnav-inner { display: flex; align-items: center; height: 60px; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; text-decoration: none; }
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 7px; background: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.brand-mark svg { width: 15px; height: 15px; }
+.nav-links { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.nav-links a {
+  text-decoration: none; color: var(--dim); font-size: 14px;
+  padding: 7px 12px; border-radius: 8px;
+}
+.nav-links a:hover { color: var(--text); background: var(--surface-2); }
+
+/* ============ 通用按钮 ============ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 42px; padding: 0 22px; border-radius: 10px;
+  background: var(--accent); color: var(--accent-text);
+  font: inherit; font-size: 15px; font-weight: 600;
+  text-decoration: none; border: 1px solid var(--accent);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(24, 24, 27, 0.18); }
+.btn.ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); }
+.btn.ghost:hover { box-shadow: 0 6px 20px rgba(24, 24, 27, 0.08); }
+.btn.small { height: 34px; padding: 0 16px; font-size: 13.5px; border-radius: 8px; }
+
+/* ============ Hero ============ */
+.hero { padding: 76px 0 64px; text-align: center; }
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--dim);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 6px 14px;
+}
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.hero h1 {
+  font-size: clamp(32px, 4.8vw, 54px);
+  line-height: 1.16; letter-spacing: -0.02em;
+  margin: 22px auto 16px; max-width: 21em;
+}
+.hero .sub {
+  font-size: clamp(15px, 1.6vw, 17.5px); line-height: 1.8; color: var(--dim);
+  max-width: 620px; margin: 0 auto 30px;
+}
+.cta-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.hero-note { margin-top: 18px; font-size: 13px; color: var(--dim); }
+.hero-note code { font-family: var(--mono); font-size: 12px; background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
+
+/* ============ 区块标题 ============ */
+.section { padding: 84px 0 0; }
+.section-head { text-align: center; margin-bottom: 44px; }
+.section-head h2 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -0.015em; margin: 0 0 12px; }
+.section-head p { color: var(--dim); font-size: 16px; line-height: 1.8; margin: 0 auto; max-width: 560px; }
+
+/* ============ 功能小节 ============ */
+.feature { display: grid; grid-template-columns: 5fr 6fr; gap: 44px; align-items: center; margin-bottom: 84px; }
+.feature.rev .f-copy { order: 2; }
+.feature.rev .shot { order: 1; }
+.feature, .feature.rev { margin-left: 32px; margin-right: 32px; }
+.hero .shot { margin-left: 32px; margin-right: 32px; }
+.step { margin-left: 32px; margin-right: 32px; }
+.f-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 16px;
+}
+.f-copy h3 { font-size: 22px; letter-spacing: -0.01em; margin: 0 0 10px; }
+.f-copy p { color: var(--dim); font-size: 15px; line-height: 1.85; margin: 0 0 14px; }
+.f-copy p strong { color: var(--text); font-weight: 600; }
+.f-copy code { font-family: var(--mono); font-size: 13px; background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
+.f-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.f-tags span {
+  font-size: 12.5px; color: var(--dim);
+  border: 1px solid var(--border); background: var(--surface);
+  border-radius: 999px; padding: 4px 12px;
+}
+
+/* ============ 模拟浏览器窗口 ============ */
+.shot { margin: 0; }
+/* 截图替换后：真实截图直接填满卡片，样式与模拟窗口一致 */
+.shot > img {
+  width: 100%; height: auto; display: block;
+  border-radius: 14px; border: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(24, 24, 27, 0.1);
+}
+.mock {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(24, 24, 27, 0.1);
+  font-size: 13px;
+}
+/* 标签条 */
+.win-bar { display: flex; align-items: flex-end; gap: 6px; background: #dee1e6; padding: 8px 12px 0; }
+.win-dots { display: flex; gap: 7px; align-self: center; margin-right: 8px; padding-bottom: 8px; }
+.win-dots i { width: 12px; height: 12px; border-radius: 50%; }
+.win-dots i:nth-child(1) { background: #ff5f57; }
+.win-dots i:nth-child(2) { background: #febc2e; }
+.win-dots i:nth-child(3) { background: #28c840; }
+.win-tab {
+  display: flex; align-items: center; gap: 7px;
+  background: #fff; border-radius: 9px 9px 0 0;
+  padding: 7px 14px; font-size: 12px; color: #3c4043;
+  max-width: 190px; white-space: nowrap; overflow: hidden;
+}
+.win-tab.dim { background: transparent; color: #5f6368; }
+.fav { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; }
+.win-plus { color: #5f6368; font-size: 16px; padding: 0 10px 8px; align-self: center; }
+/* 地址栏 */
+.win-url { display: flex; align-items: center; gap: 12px; background: #fff; border-bottom: 1px solid #dadce0; padding: 8px 14px; }
+.win-nav { color: #5f6368; font-size: 14px; display: flex; gap: 10px; }
+.win-addr {
+  flex: 1; background: #f1f3f4; border-radius: 999px;
+  padding: 6px 16px; font-size: 12.5px; color: #3c4043;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; overflow: hidden;
+}
+.win-addr .lock { font-size: 11px; }
+/* 窗口主体：左网页 + 右侧边栏 */
+.win-body { display: flex; min-height: 400px; }
+.page { flex: 1; min-width: 0; background: #fff; padding: 26px 30px; overflow: hidden; }
+.page h1 { font-size: 19px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.page h2 { font-size: 14.5px; margin: 18px 0 8px; }
+.page .site { font-size: 11.5px; color: #5f6368; margin-bottom: 14px; }
+.page p, .page li { font-size: 12.5px; line-height: 1.85; color: #3c4043; margin: 0 0 8px; }
+.page .hr { border-top: 1px solid #ebebeb; margin: 14px 0; }
+.page blockquote { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid #dadce0; color: #5f6368; font-size: 12.5px; line-height: 1.8; }
+
+/* ============ 扩展侧边栏（风格 1:1 取自 sidepanel.css） ============ */
+.panel {
+  width: 344px; flex-shrink: 0;
+  background: var(--bg); border-left: 1px solid #e8eaed;
+  display: flex; flex-direction: column;
+}
+.sp-topbar {
+  display: flex; align-items: center; gap: 6px;
+  height: 46px; padding: 0 10px; flex-shrink: 0;
+  border-bottom: 1px solid var(--border); background: var(--bg);
+}
+.picker {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: var(--radius-sm);
+  color: var(--dim); font-size: 13px; position: relative;
+}
+.picker svg { width: 14px; height: 14px; }
+.sp-count {
+  font-size: 11px; background: var(--surface-2); color: var(--dim);
+  border-radius: 999px; padding: 0 6px; line-height: 18px; min-width: 18px; text-align: center;
+}
+.sp-chip {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 0 8px; font-size: 11px; line-height: 18px;
+  color: var(--text); max-width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-spacer { flex: 1; }
+.sp-model { font-size: 12px; color: var(--dim); white-space: nowrap; }
+.sp-gear {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--dim); flex-shrink: 0;
+}
+.sp-gear svg { width: 16px; height: 16px; }
+/* 下拉的标签列表（展开态） */
+.sp-tablist {
+  position: absolute; z-index: 5; top: calc(100% + 6px); left: 0;
+  width: 300px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+.sp-tablist label {
+  display: flex; gap: 8px; padding: 6px 8px; align-items: center;
+  border-radius: var(--radius-sm); cursor: default;
+}
+.sp-tablist label:hover { background: var(--surface-2); }
+.sp-tablist input { width: 14px; height: 14px; accent-color: var(--accent); flex-shrink: 0; }
+.sp-tablist .t { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-tablist .t .u { color: var(--dim); font-size: 10.5px; }
+/* 消息列表 */
+.sp-msgs { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; min-height: 0; }
+.sp-b {
+  max-width: 88%; padding: 8px 12px; border-radius: var(--radius);
+  line-height: 1.65; overflow-wrap: break-word; font-size: 13px;
+}
+.sp-b.user {
+  align-self: flex-end; background: var(--accent); color: var(--accent-text);
+  border-bottom-right-radius: 4px;
+}
+.sp-b.bot {
+  align-self: flex-start; background: var(--surface);
+  border: 1px solid var(--border); border-bottom-left-radius: 4px;
+}
+.sp-b :is(p, ul, ol) { margin: 0.45em 0; }
+.sp-b :is(ul, ol) { padding-left: 1.4em; }
+.sp-b li { margin: 0.2em 0; }
+.sp-b code {
+  background: rgba(255, 255, 255, 0.16); border-radius: 4px;
+  padding: 1px 5px; font-size: 0.9em; font-family: var(--mono);
+}
+.sp-b.bot code { background: var(--surface-2); }
+.sp-b table { border-collapse: collapse; margin: 0.5em 0; font-size: 12px; display: block; max-width: 100%; overflow-x: auto; }
+.sp-b :is(th, td) { border: 1px solid var(--border); padding: 3px 8px; text-align: left; }
+.sp-b .src { display: block; font-size: 11px; color: var(--dim); margin-top: 6px; }
+/* 工具轨迹 */
+.sp-trace {
+  align-self: stretch; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface); overflow: hidden;
+}
+.sp-trace .hd {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  font-size: 12px; color: var(--dim); user-select: none;
+}
+.sp-chev { display: inline-flex; }
+.sp-chev svg { width: 12px; height: 12px; }
+.sp-trace.open .sp-chev { transform: rotate(90deg); }
+.sp-trace .nm { font-family: var(--mono); color: var(--text); }
+.sp-trace .st { margin-left: auto; font-size: 11px; }
+.sp-trace .st.ok { color: var(--ok); }
+.sp-trace .bd { padding: 0 10px 8px; display: flex; flex-direction: column; gap: 6px; }
+.sp-trace pre {
+  background: var(--surface-2); border-radius: var(--radius-sm);
+  padding: 8px 10px; overflow-x: auto; margin: 0;
+  font-size: 11px; line-height: 1.6; font-family: var(--mono);
+  color: #3f3f46; white-space: pre;
+}
+.sp-trace img, .sp-trace .img {
+  display: block; max-width: 100%; border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+/* 输入区 */
+.sp-input {
+  display: flex; align-items: flex-end; gap: 8px; padding: 10px;
+  border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0;
+}
+.sp-input .box {
+  flex: 1; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  padding: 7px 10px; font-size: 12.5px; color: var(--dim); background: var(--surface);
+  line-height: 1.5;
+}
+.sp-input .send {
+  width: 32px; height: 32px; border-radius: var(--radius-sm); flex-shrink: 0;
+  background: var(--accent); color: var(--accent-text);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.sp-input .send svg { width: 15px; height: 15px; }
+
+/* ============ 设置面板（模拟） ============ */
+.sp-settings { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); overflow: hidden; }
+.sp-settings .head { display: flex; align-items: center; justify-content: space-between; }
+.sp-settings .head .back { color: var(--dim); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.sp-settings .head .back svg { width: 13px; height: 13px; }
+.sp-settings .save {
+  height: 30px; padding: 0 14px; border-radius: var(--radius-sm);
+  background: var(--accent); color: var(--accent-text);
+  font-size: 13px; display: inline-flex; align-items: center;
+}
+.sp-field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--dim); }
+.sp-field .inp {
+  height: 32px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  padding: 0 10px; font-size: 12.5px; color: var(--text); background: var(--surface);
+  display: flex; align-items: center; white-space: nowrap; overflow: hidden;
+  font-family: var(--mono);
+}
+.sp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-chips .c {
+  height: 24px; padding: 0 10px; font-size: 12px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text);
+  display: inline-flex; align-items: center;
+}
+.sp-chips .c.on { background: var(--accent); color: var(--accent-text); }
+.sp-fieldset {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 8px 12px 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.sp-fieldset legend { font-size: 12px; color: var(--dim); padding: 0 4px; }
+.mcp-row { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.mcp-status { font-size: 12px; color: var(--ok); }
+
+
+/* ============ 小功能网格 ============ */
+.mini-head { text-align: center; margin: 20px 0 32px; }
+.mini-head h3 { font-size: 20px; letter-spacing: -0.01em; margin: 0 0 6px; }
+.mini-head p { color: var(--dim); font-size: 14.5px; margin: 0; }
+.mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.mcard {
+  border: 1px solid var(--border); border-radius: 14px;
+  background: var(--surface); padding: 22px 20px;
+}
+.mcard .ico { font-size: 22px; margin-bottom: 10px; }
+.mcard h4 { font-size: 15.5px; margin: 0 0 6px; }
+.mcard p { color: var(--dim); font-size: 13px; line-height: 1.75; margin: 0; }
+.mcard code { font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); border-radius: 4px; padding: 1px 5px; }
+
+/* ============ 隐私 ============ */
+.privacy-band { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 72px 0; margin-top: 20px; }
+.privacy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pcard {
+  border: 1px solid var(--border); border-radius: 14px;
+  background: var(--bg); padding: 26px 24px;
+}
+.pcard .ico { font-size: 24px; margin-bottom: 12px; }
+.pcard h3 { font-size: 16px; margin: 0 0 8px; }
+.pcard p { color: var(--dim); font-size: 13.5px; line-height: 1.8; margin: 0; }
+.pcard code { font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); border-radius: 4px; padding: 1px 5px; }
+
+/* ============ 快速开始 ============ */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: step; }
+.step { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 26px 24px; }
+.step .n {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-text);
+  font-size: 14px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;
+}
+.step h3 { font-size: 16.5px; margin: 0 0 8px; }
+.step p, .step li { color: var(--dim); font-size: 13.5px; line-height: 1.8; }
+.step ol { margin: 0; padding-left: 1.3em; }
+.step li { margin-bottom: 4px; }
+.step code { font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); border-radius: 4px; padding: 1px 5px; color: var(--text); }
+.step .alt { font-size: 12px; color: var(--dim); margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; }
+
+/* ============ Footer ============ */
+footer { border-top: 1px solid var(--border); margin-top: 84px; padding: 36px 0 44px; }
+.foot { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; color: var(--dim); font-size: 13.5px; }
+.foot .brand { font-size: 14px; }
+.foot .links { display: flex; gap: 16px; flex-wrap: wrap; }
+.foot a { color: var(--dim); text-decoration: none; }
+.foot a:hover { color: var(--text); }
+.foot .meta { margin-left: auto; }
+
+/* ============ 响应式 ============ */
+@media (max-width: 900px) {
+  .hero { padding-top: 56px; }
+  .feature, .feature.rev { grid-template-columns: 1fr; gap: 24px; margin-bottom: 64px; }
+  .feature.rev .f-copy { order: 0; }
+  .feature.rev .shot { order: 0; }
+  .win-body { flex-direction: column; min-height: 0; }
+  .page { display: none; }
+  .panel { width: auto; border-left: none; border-top: 1px solid #e8eaed; }
+  .win-tab { max-width: 130px; }
+  .win-tab.hide-m { display: none; }
+  .privacy-grid, .steps, .mini-grid { grid-template-columns: 1fr; }
+  .nav-links a.hide-m { display: none; }
+  .foot .meta { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================= 顶栏 ================= -->
+<nav class="topnav">
+  <div class="container topnav-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark">
+        <svg viewBox="0 0 64 64" fill="none"><path d="M18 24h28M18 33h20" stroke="#fff" stroke-width="6" stroke-linecap="round"/><circle cx="42" cy="42" r="4" fill="#fff"/></svg>
+      </span>
+      LLM Sidebar
+    </a>
+    <div class="nav-links">
+      <a class="hide-m" href="#features">功能</a>
+      <a class="hide-m" href="#privacy">隐私</a>
+      <a class="hide-m" href="#start">快速开始</a>
+      <a href="https://github.com/oashua/llm_browser_ext" target="_blank" rel="noopener">GitHub ↗</a>
+      <a class="btn small" href="https://github.com/oashua/llm_browser_ext/releases" target="_blank" rel="noopener">安装</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= Hero ================= -->
+<header class="hero container" id="top">
+  <span class="badge"><span class="dot"></span>Chrome 侧边栏扩展 · 开源免费 · 支持任意模型端点</span>
+  <h1>打开任意网页，<br>和 AI 聊你正在看的页面</h1>
+  <p class="sub">
+    AI 读到的不是网页快照，而是你眼前真实的页面——正文、图片、甚至完整 DOM。
+    问它「这页讲了什么」「对比这两个标签页」，它基于页面内容回答，并告诉你信息来自哪里。
+  </p>
+  <div class="cta-row">
+    <a class="btn" href="https://github.com/oashua/llm_browser_ext/releases" target="_blank" rel="noopener">下载安装</a>
+    <a class="btn ghost" href="#start">快速开始</a>
+  </div>
+  <p class="hero-note">支持智谱 GLM、官方 Claude、OpenRouter 等任意 Anthropic 协议兼容端点 · 可接入 MCP 工具</p>
+
+  <!-- 📸 截图替换：assets/shot-hero.png（整窗含侧边栏，约 1600×1000） -->
+  <figure class="shot reveal" data-shot="hero" style="margin-top:52px">
+    <div class="mock">
+      <div class="win-bar">
+        <span class="win-dots"><i></i><i></i><i></i></span>
+        <span class="win-tab"><span class="fav" style="background:#a2a9b1">W</span>大语言模型 - 维基百科</span>
+        <span class="win-tab dim hide-m"><span class="fav" style="background:#1f2328">G</span>GitHub Pricing</span>
+        <span class="win-plus">+</span>
+      </div>
+      <div class="win-url">
+        <span class="win-nav">←<span class="hide-m"> →</span> ⟳</span>
+        <span class="win-addr"><span class="lock">🔒</span>zh.wikipedia.org/wiki/大语言模型</span>
+      </div>
+      <div class="win-body">
+        <div class="page">
+          <h1>大语言模型</h1>
+          <div class="site">维基百科，自由的百科全书</div>
+          <p><b>大语言模型</b>（LLM）是一种以深度学习构建、使用海量文本数据训练的自然语言处理模型，参数量通常达到数十亿以上，通过预测序列中的下一个词来学习语言的统计结构。</p>
+          <p>研究表明，当模型规模跨过某个阈值后，会出现训练目标中未曾明确指定的能力，例如思维链推理、多步算术与指令泛化，这类现象被称为「涌现能力」。</p>
+          <div class="hr"></div>
+          <h2>应用</h2>
+          <p>大语言模型被广泛用于对话助手、代码生成、摘要与翻译等场景；同时也带来幻觉、偏见与成本方面的挑战，是当前 AI 安全研究的重点对象。</p>
+          <blockquote>本条目介绍大语言模型的定义、训练方法、涌现能力与应用风险。</blockquote>
+        </div>
+        <aside class="panel">
+          <div class="sp-topbar">
+            <span class="picker">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+              上下文
+              <span class="sp-count">1</span>
+              <span class="sp-chip">大语言模型</span>
+            </span>
+            <span class="sp-spacer"></span>
+            <span class="sp-model">glm-4.7</span>
+            <span class="sp-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+          </div>
+          <div class="sp-msgs">
+            <div class="sp-b user">这页讲了什么？给我 3 条要点</div>
+            <div class="sp-trace">
+              <div class="hd">
+                <span class="sp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+                <span class="nm">get_page_content</span>
+                <span class="st ok">完成</span>
+              </div>
+            </div>
+            <div class="sp-b bot">
+              <p>这页是维基百科「大语言模型」条目，要点：</p>
+              <ol>
+                <li><b>定义</b>：以海量文本训练、参数量达数十亿以上的语言模型；</li>
+                <li><b>涌现能力</b>：规模跨过阈值后出现思维链推理等未明确训练的能力；</li>
+                <li><b>应用与风险</b>：广泛用于对话、代码生成，同时存在幻觉与偏见挑战。</li>
+              </ol>
+              <span class="src">来源：大语言模型 - 维基百科（当前标签页）</span>
+            </div>
+          </div>
+          <div class="sp-input">
+            <span class="box">输入问题，Enter 发送…</span>
+            <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </figure>
+</header>
+
+<main>
+<!-- ================= 功能特色 ================= -->
+<section class="section container" id="features">
+  <div class="section-head">
+    <h2>两大核心能力</h2>
+    <p>先把最重要的事做对，其余的才叫锦上添花。</p>
+  </div>
+
+  <!-- 核心 1：读到真实渲染的页面 -->
+  <div class="feature reveal">
+    <div class="f-copy">
+      <div class="f-icon">📖</div>
+      <h3>AI 读到的，就是你看到的</h3>
+      <p>
+        把链接丢给网页版 AI？它在服务端 fetch 到的是<strong>没跑过 JavaScript 的空壳</strong>——
+        动态加载的信息流、要点开的折叠内容、登录后才可见的页面，统统抓不到。
+      </p>
+      <p>
+        LLM Sidebar 读的是你浏览器里<strong>渲染完成的页面</strong>：你看到什么，它就读到什么。
+        正文、动态内容、表格数据都能答，来源与工具轨迹全程可查。
+      </p>
+      <div class="f-tags"><span>动态页面读得到</span><span>登录后内容读得到</span><span>轨迹透明</span></div>
+    </div>
+    <!-- 📸 截图替换：assets/shot-qa.png -->
+    <figure class="shot" data-shot="qa">
+      <div class="mock">
+        <div class="win-bar">
+          <span class="win-dots"><i></i><i></i><i></i></span>
+          <span class="win-tab"><span class="fav" style="background:#3574e0">热</span>AI 前沿 · 今日热榜</span>
+          <span class="win-plus">+</span>
+        </div>
+        <div class="win-url">
+          <span class="win-nav">←<span class="hide-m"> →</span> ⟳</span>
+          <span class="win-addr"><span class="lock">🔒</span>feed.aifront.dev/hot</span>
+        </div>
+        <div class="win-body">
+          <div class="page">
+            <h1>今日热榜</h1>
+            <div class="site">内容由 JavaScript 动态加载 · 已登录</div>
+            <p><b>1. 开源模型追上闭源的临界点在哪？</b><br>参数效率比拼的焦点从总量转向数据质量…… <span style="color:#5f6368">💬 312 · ⬆ 1.2k</span></p>
+            <div class="hr"></div>
+            <p><b>2. 上下文长度是不是越多越好？</b><br>三组对照实验表明超长上下文的召回率并不线性…… <span style="color:#5f6368">💬 208 · ⬆ 890</span></p>
+            <div class="hr"></div>
+            <p><b>3. Agent 工具调用的可靠性测试基准</b><br>新基准覆盖 40 类真实网站操作场景…… <span style="color:#5f6368">💬 96 · ⬆ 540</span></p>
+            <p style="text-align:center;color:#1a73e8;margin-top:12px">加载更多 ↓</p>
+          </div>
+          <aside class="panel">
+            <div class="sp-topbar">
+              <span class="picker">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+                上下文 <span class="sp-count">1</span> <span class="sp-chip">今日热榜</span>
+              </span>
+              <span class="sp-spacer"></span>
+              <span class="sp-model">glm-4.7</span>
+              <span class="sp-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+            </div>
+            <div class="sp-msgs">
+              <div class="sp-b user">这个信息流里大家主要在讨论什么？</div>
+              <div class="sp-trace open">
+                <div class="hd">
+                  <span class="sp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+                  <span class="nm">get_page_content</span>
+                  <span class="st ok">完成</span>
+                </div>
+                <div class="bd"><pre>{
+  "tabId": 3312
+}
+# 今日热榜
+URL: https://feed.aifront.dev/hot
+
+1. 开源模型追上闭源的临界点
+   在哪？参数效率比拼的焦点
+   从总量转向数据质量……
+2. 上下文长度是不是越多越好？
+   ……</pre></div>
+              </div>
+              <div class="sp-b bot">
+                <p>讨论集中在三个话题：</p>
+                <ol>
+                  <li><b>开源 vs 闭源</b>：焦点从参数量转向数据质量；</li>
+                  <li><b>长上下文</b>：召回率并不随长度线性提升；</li>
+                  <li><b>Agent 可靠性</b>：新基准覆盖 40 类真实网站操作。</li>
+                </ol>
+                <span class="src">来源：今日热榜（当前标签页）</span>
+              </div>
+            </div>
+            <div class="sp-input">
+              <span class="box">输入问题，Enter 发送…</span>
+              <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <!-- 核心 2：全程在浏览器里 -->
+  <div class="feature rev reveal">
+    <div class="f-copy">
+      <div class="f-icon">🗂</div>
+      <h3>全程在浏览器里，零切换</h3>
+      <p>
+        不用复制链接到新窗口，不用截图贴进聊天框，不用在应用之间来回跳。
+        侧边栏常驻在当前页旁边，<strong>眼前这页就是上下文</strong>，边看边问。
+      </p>
+      <p>
+        要参考更多页面？顶部「上下文」勾选多个标签页，一句话对比——
+        <strong>「对比这两页的价格方案」</strong>，直接出对比表格，来源逐页可查。
+      </p>
+      <div class="f-tags"><span>侧边栏常驻</span><span>当前页即上下文</span><span>多标签对比</span></div>
+    </div>
+    <!-- 📸 截图替换：assets/shot-tabs.png -->
+    <figure class="shot" data-shot="tabs">
+      <div class="mock">
+        <div class="win-bar">
+          <span class="win-dots"><i></i><i></i><i></i></span>
+          <span class="win-tab"><span class="fav" style="background:#1f2328">G</span>GitHub Pricing</span>
+          <span class="win-tab dim hide-m"><span class="fav" style="background:#e24329">L</span>GitLab Pricing</span>
+          <span class="win-plus">+</span>
+        </div>
+        <div class="win-url">
+          <span class="win-nav">←<span class="hide-m"> →</span> ⟳</span>
+          <span class="win-addr"><span class="lock">🔒</span>github.com/pricing</span>
+        </div>
+        <div class="win-body">
+          <div class="page">
+            <h1>Pricing</h1>
+            <div class="site">Like all of GitHub's products……</div>
+            <p><b>Free</b> — 无限公开/私有仓库，Actions 2000 分钟/月，Community 支持。</p>
+            <p><b>Pro</b> — $4/月，额外的高级工具与 Insights。</p>
+            <p><b>Team</b> — $4/人/月，受保护的分支与团队审核。</p>
+            <p><b>Enterprise</b> — $21/人/月，SSO 与审计日志。</p>
+          </div>
+          <aside class="panel">
+            <div class="sp-topbar">
+              <span class="picker" style="background:var(--surface-2);color:var(--text)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+                上下文 <span class="sp-count">2</span>
+                <span class="sp-tablist">
+                  <label><input type="checkbox" checked><span class="t">GitHub Pricing<br><span class="u">github.com</span></span></label>
+                  <label><input type="checkbox" checked><span class="t">Pricing | GitLab<br><span class="u">about.gitlab.com</span></span></label>
+                  <label><input type="checkbox"><span class="t">大语言模型 - 维基百科</span></label>
+                </span>
+              </span>
+              <span class="sp-spacer"></span>
+              <span class="sp-model">glm-4.7</span>
+              <span class="sp-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+            </div>
+            <div class="sp-msgs">
+              <div class="sp-b user">对比这两页的免费版有什么差异？</div>
+              <div class="sp-trace">
+                <div class="hd">
+                  <span class="sp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+                  <span class="nm">read_tab</span>
+                  <span class="st ok">完成 ×2</span>
+                </div>
+              </div>
+              <div class="sp-b bot">
+                <p>两页免费版的关键差异：</p>
+                <table>
+                  <tr><th></th><th>GitHub Free</th><th>GitLab Free</th></tr>
+                  <tr><td>私有仓库</td><td>无限</td><td>无限</td></tr>
+                  <tr><td>CI/CD</td><td>2000 分钟/月</td><td>400 分钟/月</td></tr>
+                  <tr><td>团队规模</td><td>不限人数</td><td>每顶级组 5 人</td></tr>
+                </table>
+                <span class="src">来源：GitHub Pricing · GitLab Pricing</span>
+              </div>
+            </div>
+            <div class="sp-input">
+              <span class="box">输入问题，Enter 发送…</span>
+              <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <!-- 小功能合集（截图不需要替换：无演示图） -->
+  <div class="mini-head">
+    <h3>更多顺手的小功能</h3>
+    <p>不喧宾夺主，需要时都在。</p>
+  </div>
+  <div class="mini-grid">
+    <div class="mcard">
+      <div class="ico">🖼</div>
+      <h4>看得见图片</h4>
+      <p>搭配 <code>glm-4v</code> 等视觉模型，截取页面或抓取图片分析图表；截图直接显示在对话轨迹里，AI 看到了什么一目了然。</p>
+    </div>
+    <div class="mcard">
+      <div class="ico">🔍</div>
+      <h4>完整 HTML 模式</h4>
+      <p>开关打开即读渲染后的完整 DOM，也能只取某个选择器匹配的局部——「这个组件的 class 结构是什么」终于能答了。</p>
+    </div>
+    <div class="mcard">
+      <div class="ico">⚙️</div>
+      <h4>对话改配置</h4>
+      <p>「换到 glm-4v」「单页上限调到 20 万」，说完即生效并自动保存；密钥与端点只能手动改。</p>
+    </div>
+    <div class="mcard">
+      <div class="ico">🔌</div>
+      <h4>任意模型端点</h4>
+      <p>GLM、官方 Claude、OpenRouter 等 Anthropic 协议端点；填好密钥一键拉取模型列表点选。</p>
+    </div>
+    <div class="mcard">
+      <div class="ico">🧩</div>
+      <h4>MCP 扩展</h4>
+      <p>配置远程 MCP server（streamable HTTP），联网搜索、笔记库、数据库工具随接随用。</p>
+    </div>
+    <div class="mcard">
+      <div class="ico">📤</div>
+      <h4>配置随身带</h4>
+      <p>配置导出 JSON，换电脑导入即恢复；密钥与全部配置只存本机。</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ================= 隐私 ================= -->
+<section class="privacy-band" id="privacy">
+  <div class="container">
+    <div class="section-head">
+      <h2>你的数据留在你手里</h2>
+      <p>没有账号、没有云端、没有统计上报。</p>
+    </div>
+    <div class="privacy-grid">
+      <div class="pcard reveal">
+        <div class="ico">🔐</div>
+        <h3>数据只在本机</h3>
+        <p>API Key 与全部配置只存在浏览器本机（<code>chrome.storage.local</code>），导出的配置文件也只落在本机。</p>
+      </div>
+      <div class="pcard reveal">
+        <div class="ico">👁</div>
+        <h3>默认最小可见</h3>
+        <p>AI 默认只能读取你在「上下文」里勾选的标签页；「允许读取所有标签页」是设置里的手动开关，且无法通过对话自行打开。</p>
+      </div>
+      <div class="pcard reveal">
+        <div class="ico">📡</div>
+        <h3>不多走一个字节</h3>
+        <p>除你配置的模型端点与 MCP server 外，扩展不向任何地方发送数据，也没有任何埋点与上报。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 快速开始 ================= -->
+<section class="section container" id="start">
+  <div class="section-head">
+    <h2>三步开问</h2>
+    <p>从安装到第一次提问，不超过五分钟。</p>
+  </div>
+  <div class="steps">
+    <div class="step reveal">
+      <span class="n">1</span>
+      <h3>安装扩展</h3>
+      <ol>
+        <li>从 <a href="https://github.com/oashua/llm_browser_ext/releases" target="_blank" rel="noopener">Releases</a> 下载 zip 并解压</li>
+        <li>打开 <code>chrome://extensions</code>，开启「开发者模式」</li>
+        <li>「加载已解压的扩展程序」→ 选择解压目录</li>
+      </ol>
+      <p class="alt">也可克隆源码后 <code>npm install &amp;&amp; npm run build</code>，加载 <code>dist/</code></p>
+    </div>
+    <div class="step reveal">
+      <span class="n">2</span>
+      <h3>配置模型</h3>
+      <ol>
+        <li>侧边栏右上角 ⚙ 进入设置</li>
+        <li>填 API Base URL 与 API Key<br>（GLM 填 <code>https://open.bigmodel.cn/api/anthropic</code>）</li>
+        <li>点「获取列表」选模型 → 保存</li>
+      </ol>
+      <p class="alt">支持任意 Anthropic 协议兼容端点：官方 Claude、OpenRouter 等</p>
+    </div>
+    <div class="step reveal">
+      <span class="n">3</span>
+      <h3>打开网页开问</h3>
+      <ol>
+        <li>打开任意网页，在侧边栏输入问题</li>
+        <li>Enter 发送，Shift+Enter 换行</li>
+        <li>顶部「上下文」勾选想让 AI 参考的标签页</li>
+      </ol>
+      <p class="alt">页面内容更新后，说「重新读一下当前页」即可刷新</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ================= Footer ================= -->
+<footer>
+  <div class="container foot">
+    <span class="brand">
+      <span class="brand-mark" style="width:20px;height:20px;border-radius:6px">
+        <svg viewBox="0 0 64 64" fill="none" style="width:12px;height:12px"><path d="M18 24h28M18 33h20" stroke="#fff" stroke-width="6" stroke-linecap="round"/><circle cx="42" cy="42" r="4" fill="#fff"/></svg>
+      </span>
+      LLM Sidebar
+    </span>
+    <span class="links">
+      <a href="https://github.com/oashua/llm_browser_ext" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/oashua/llm_browser_ext/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="https://github.com/oashua/llm_browser_ext/issues" target="_blank" rel="noopener">问题反馈</a>
+    </span>
+    <span class="meta">Chrome MV3 · TypeScript · Preact · 开源免费</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in') })
+    return
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+    })
+  }, { threshold: 0.12 })
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el) })
+})()
+</script>
+</body>
+</html>

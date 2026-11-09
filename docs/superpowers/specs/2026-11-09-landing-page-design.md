@@ -47,8 +47,9 @@
 ## 响应式与动效
 
 - ≥900px 双栏交替；<900px 单列，模拟图等比缩放。
-- 动效仅 IntersectionObserver 滚动淡入；`prefers-reduced-motion` 时禁用。
-- JS 约 20 行，页面在无 JS 时内容完整可读。
+- 无 JS、无动效（首版实现过 IntersectionObserver 滚动淡入，无头截图验证发现
+  opacity/transform 合成层在部分光栅化环境下整块不绘制，为保证内容可见性已移除；
+  仅保留锚点平滑滚动，`prefers-reduced-motion` 时禁用）。
 
 ## 交付物
 
