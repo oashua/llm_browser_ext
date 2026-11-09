@@ -185,6 +185,11 @@ textarea::placeholder { color: var(--text-dim); }
   flex-direction: column;
   gap: 10px;
 }
+/* 内容总高超过容器时 flex 子项默认收缩：气泡有内容最小高度保护，
+   <details> 轨迹会被压成 2px 边框线（长会话中"轨迹消失"）——禁止收缩 */
+.msg-list > * {
+  flex-shrink: 0;
+}
 .empty {
   color: var(--text-dim);
   text-align: center;
