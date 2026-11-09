@@ -6,3 +6,5 @@ dist/
 .DS_Store
 Thumbs.db
 release/
+功能截图/
+.crops/
