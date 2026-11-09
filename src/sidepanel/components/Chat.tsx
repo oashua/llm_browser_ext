@@ -20,8 +20,13 @@ export function Chat(props: ChatProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
+  // stick-to-bottom：仅当用户本来就在底部附近时才跟随滚动，
+  // 上翻查看历史（如点开工具轨迹）时不被流式更新强行拉回底部
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
+    const el = listRef.current
+    if (!el) return
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    if (nearBottom) el.scrollTo({ top: el.scrollHeight })
   }, [props.messages.length, props.streamingText])
 
   // 从消息序列构造视图项：文本气泡 + 工具轨迹

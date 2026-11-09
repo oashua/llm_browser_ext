@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'preact/hooks'
 import { IconLayers } from './icons'
 
 export interface PickerTab {
@@ -15,8 +16,21 @@ export interface TabPickerProps {
 export function TabPicker(props: TabPickerProps) {
   const byId = new Map(props.tabs.map((t) => [t.id, t]))
   const chips = props.selected.filter((id) => byId.has(id))
+  const ref = useRef<HTMLDetailsElement>(null)
+
+  // 原生 <details> 不会因点击外部而收起；不处理会让下拉面板
+  // 悬浮在消息区上方（z-index 高），拦截下方工具轨迹的点击
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent): void => {
+      const el = ref.current
+      if (el?.open && !el.contains(e.target as Node)) el.open = false
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [])
+
   return (
-    <details class="tab-picker">
+    <details class="tab-picker" ref={ref}>
       <summary>
         <span class="picker-label">
           <IconLayers />
